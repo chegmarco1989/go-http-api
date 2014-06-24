@@ -10,8 +10,8 @@ A client library for the `Vumi Go`_ HTTP API.
 .. |gha-ci| image:: https://travis-ci.org/praekelt/go-http-api.png?branch=develop
 .. _gha-ci: https://travis-ci.org/praekelt/go-http-api
 
-.. |vfs-cover| image:: https://coveralls.io/repos/praekelt/go-http-api/badge.png?branch=develop
-.. _vfs-cover: https://coveralls.io/r/praekelt/go-http-api
+.. |gha-cover| image:: https://coveralls.io/repos/praekelt/go-http-api/badge.png?branch=develop
+.. _gha-cover: https://coveralls.io/r/praekelt/go-http-api
 
 You can contact the Vumi development team in the following ways:
 
