@@ -1,0 +1,6 @@
+pep8
+pyflakes
+coverage
+pytest
+pytest-xdist
+pytest-cov
