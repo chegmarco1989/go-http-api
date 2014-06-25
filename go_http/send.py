@@ -133,7 +133,7 @@ class LoggingSender(object):
         """
         assert agg in ["last", "sum", "avg", "max", "min"]
         self._logger.log(
-            self._level, "Metric: %r [%s] -> %r" % (metric, agg, value))
+            self._level, "Metric: %r [%s] -> %g" % (metric, agg, float(value)))
         return {
             "success": True,
             "reason": "Metrics published",
