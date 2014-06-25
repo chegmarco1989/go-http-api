@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from requests_testadapter import TestAdapter, TestSession
 
-from go_http.send import HttpApiSender
+from go_http.send import HttpApiSender, LoggingSender
 
 
 class RecordingAdapter(TestAdapter):
@@ -84,4 +84,27 @@ class TestHttpApiSender(TestCase):
 
 
 class TestLoggingSender(TestCase):
-    pass
+    def setUp(self):
+        self.sender = LoggingSender('go_http.test')
+
+    def test_send_text(self):
+        result = self.sender.send_text("to-addr-1", "Hello!")
+        self.assertEqual(result, {
+            "message_id": result["message_id"],
+            "to_addr": "to-addr-1",
+            "content": "Hello!",
+        })
+
+    def test_fire_metric(self):
+        result = self.sender.fire_metric("metric-1", 5.1, agg="max")
+        self.assertEqual(result, {
+            "success": True,
+            "reason": "Metrics published",
+        })
+
+    def test_fire_metric_default_agg(self):
+        result = self.sender.fire_metric("metric-1", 5.2)
+        self.assertEqual(result, {
+            "success": True,
+            "reason": "Metrics published",
+        })

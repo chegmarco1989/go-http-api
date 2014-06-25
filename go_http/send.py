@@ -120,7 +120,7 @@ class LoggingSender(object):
             "to_addr": to_addr,
         }
 
-    def fire_metric(self, metric, value, agg):
+    def fire_metric(self, metric, value, agg="last"):
         """ Fire a value for a metric.
 
         :param str metric:
