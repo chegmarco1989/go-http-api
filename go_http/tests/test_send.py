@@ -24,6 +24,7 @@ class TestHttpApiSender(TestCase):
         self.session = TestSession()
         self.sender = HttpApiSender(
             account_key="acc-key", conversation_key="conv-key",
+            api_url="http://example.com/api/v1/go/http_api_nostream",
             conversation_token="conv-token", session=self.session)
 
     def test_default_session(self):
@@ -32,6 +33,13 @@ class TestHttpApiSender(TestCase):
             account_key="acc-key", conversation_key="conv-key",
             conversation_token="conv-token")
         self.assertTrue(isinstance(sender.session, requests.Session))
+
+    def test_default_api_url(self):
+        sender = HttpApiSender(
+            account_key="acc-key", conversation_key="conv-key",
+            conversation_token="conv-token")
+        self.assertEqual(sender.api_url,
+                         "http://go.vumi.org/api/v1/go/http_api_nostream")
 
     def check_request(self, request, method, data=None, headers=None):
         self.assertEqual(request.method, method)
@@ -44,7 +52,7 @@ class TestHttpApiSender(TestCase):
     def test_send_text(self):
         adapter = RecordingAdapter(json.dumps({"message_id": "id-1"}))
         self.session.mount(
-            "http://go.vumi.org/api/v1/go/http_api_nostream/conv-key/"
+            "http://example.com/api/v1/go/http_api_nostream/conv-key/"
             "messages.json", adapter)
 
         result = self.sender.send_text("to-addr-1", "Hello!")
@@ -60,7 +68,7 @@ class TestHttpApiSender(TestCase):
         adapter = RecordingAdapter(
             json.dumps({"success": True, "reason": "Yay"}))
         self.session.mount(
-            "http://go.vumi.org/api/v1/go/http_api_nostream/conv-key/"
+            "http://example.com/api/v1/go/http_api_nostream/conv-key/"
             "metrics.json", adapter)
 
         result = self.sender.fire_metric("metric-1", 5.1, agg="max")
@@ -77,7 +85,7 @@ class TestHttpApiSender(TestCase):
         adapter = RecordingAdapter(
             json.dumps({"success": True, "reason": "Yay"}))
         self.session.mount(
-            "http://go.vumi.org/api/v1/go/http_api_nostream/conv-key/"
+            "http://example.com/api/v1/go/http_api_nostream/conv-key/"
             "metrics.json", adapter)
 
         result = self.sender.fire_metric("metric-1", 5.2)
