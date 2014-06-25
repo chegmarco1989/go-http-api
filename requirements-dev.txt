@@ -4,3 +4,4 @@ coverage
 pytest
 pytest-xdist
 pytest-cov
+requests_testadapter
