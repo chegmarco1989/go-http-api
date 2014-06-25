@@ -1,6 +1,7 @@
 """ Tests for go_http.send. """
 
 import json
+import logging
 from unittest import TestCase
 
 from requests_testadapter import TestAdapter, TestSession
@@ -83,9 +84,28 @@ class TestHttpApiSender(TestCase):
             headers={"Authorization": u'Basic YWNjLWtleTpjb252LXRva2Vu'})
 
 
+class RecordingHandler(logging.Handler):
+    """ Record logs. """
+    logs = None
+
+    def emit(self, record):
+        if self.logs is None:
+            self.logs = []
+        self.logs.append(record)
+
+
 class TestLoggingSender(TestCase):
     def setUp(self):
         self.sender = LoggingSender('go_http.test')
+        self.handler = RecordingHandler()
+        logger = logging.getLogger('go_http.test')
+        logger.setLevel(logging.INFO)
+        logger.addHandler(self.handler)
+
+    def check_logs(self, msg, levelno=logging.INFO):
+        [log] = self.handler.logs
+        self.assertEqual(log.msg, msg)
+        self.assertEqual(log.levelno, levelno)
 
     def test_send_text(self):
         result = self.sender.send_text("to-addr-1", "Hello!")
@@ -94,6 +114,7 @@ class TestLoggingSender(TestCase):
             "to_addr": "to-addr-1",
             "content": "Hello!",
         })
+        self.check_logs("Message: 'Hello!' sent to 'to-addr-1'")
 
     def test_fire_metric(self):
         result = self.sender.fire_metric("metric-1", 5.1, agg="max")
@@ -101,6 +122,7 @@ class TestLoggingSender(TestCase):
             "success": True,
             "reason": "Metrics published",
         })
+        self.check_logs("Metric: 'metric-1' [max] -> 5.1")
 
     def test_fire_metric_default_agg(self):
         result = self.sender.fire_metric("metric-1", 5.2)
@@ -108,3 +130,4 @@ class TestLoggingSender(TestCase):
             "success": True,
             "reason": "Metrics published",
         })
+        self.check_logs("Metric: 'metric-1' [last] -> 5.2")
