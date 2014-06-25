@@ -26,6 +26,13 @@ class TestHttpApiSender(TestCase):
             account_key="acc-key", conversation_key="conv-key",
             conversation_token="conv-token", session=self.session)
 
+    def test_default_session(self):
+        import requests
+        sender = HttpApiSender(
+            account_key="acc-key", conversation_key="conv-key",
+            conversation_token="conv-token")
+        self.assertTrue(isinstance(sender.session, requests.Session))
+
     def check_request(self, request, method, data=None, headers=None):
         self.assertEqual(request.method, method)
         if data is not None:
