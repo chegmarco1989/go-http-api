@@ -13,8 +13,6 @@ class HttpApiSender(object):
     A helper for sending text messages and firing metrics via Vumi Go's HTTP
     API.
 
-    :param str api_url:
-        The full URL of the HTTP API.
     :param str account_key:
         The unique id of the account to send to.
         You can find this at the bottom of the Account > Details
@@ -25,6 +23,9 @@ class HttpApiSender(object):
     :param str conversation_token:
         The secret authentication token entered in the
         conversation config.
+    :param str api_url:
+        The full URL of the HTTP API. Defaults to
+        ``http://go.vumi.org/api/v1/go/http_api_nostream``.
     :type session:
         :class:`requests.Session`
     :param session:
@@ -32,12 +33,14 @@ class HttpApiSender(object):
         a new session.
     """
 
-    def __init__(self, api_url, account_key, conversation_key,
-                 conversation_token, session=None):
-        self.api_url = api_url
+    def __init__(self, account_key, conversation_key, conversation_token,
+                 api_url=None, session=None):
         self.account_key = account_key
         self.conversation_key = conversation_key
         self.conversation_token = conversation_token
+        if api_url is None:
+            api_url = "http://go.vumi.org/api/v1/go/http_api_nostream"
+        self.api_url = api_url
         if session is None:
             session = requests.Session()
         self.session = session
