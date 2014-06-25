@@ -4,4 +4,6 @@ __version__ = "0.1.0a"
 
 from .send import HttpApiSender, LoggingSender
 
-__all__ = ['HttpApiSender', 'LoggingSender']
+__all__ = [
+    'HttpApiSender', 'LoggingSender',
+]
