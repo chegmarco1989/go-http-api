@@ -65,6 +65,8 @@ class FakeContactsApi(object):
 
         if request.method == "GET":
             return self.get_contact(contact_key, request)
+        elif request.method == "DELETE":
+            return self.delete_contact(contact_key, request)
         else:
             return self.build_response("", 405)
 
@@ -84,9 +86,16 @@ class FakeContactsApi(object):
         self.contacts_data[contact[u"key"]] = contact
         return self.build_response(json.dumps(contact))
 
-    def get_contact(self, path, request):
+    def get_contact(self, contact_key, request):
         # TODO: Confirm this behaviour against the real API.
-        contact = self.contacts_data.get(path)
+        contact = self.contacts_data.get(contact_key)
+        if contact is None:
+            return self.build_response("Contact not found.", 404)
+        return self.build_response(json.dumps(contact))
+
+    def delete_contact(self, contact_key, request):
+        # TODO: Confirm this behaviour against the real API.
+        contact = self.contacts_data.pop(contact_key, None)
         if contact is None:
             return self.build_response("Contact not found.", 404)
         return self.build_response(json.dumps(contact))
@@ -129,6 +138,15 @@ class TestContactsApiClient(TestCase):
     def make_client(self, auth_token=AUTH_TOKEN):
         return ContactsApiClient(
             auth_token, api_url=self.API_URL, session=self.session)
+
+    def make_existing_contact(self, contact_data):
+        existing_contact = make_contact_dict(contact_data)
+        self.contacts_data[existing_contact[u"key"]] = existing_contact
+        return existing_contact
+
+    def assert_contact_status(self, contact_key, exists=True):
+        exists_status = (contact_key in self.contacts_data)
+        self.assertEqual(exists_status, exists)
 
     def assert_http_error(self, expected_status, func, *args, **kw):
         try:
@@ -177,22 +195,6 @@ class TestContactsApiClient(TestCase):
         contacts = self.make_client(auth_token="bogus_token")
         self.assert_http_error(403, contacts.get_contact, "foo")
 
-    def test_get_missing_contact(self):
-        contacts = self.make_client()
-        self.assert_http_error(404, contacts.get_contact, "foo")
-
-    def test_get_contact(self):
-        contacts = self.make_client()
-        existing_contact = make_contact_dict({
-            u"msisdn": u"+15556483",
-            u"name": u"Arthur",
-            u"surname": u"of Camelot",
-        })
-        self.contacts_data[existing_contact[u"key"]] = existing_contact
-
-        contact = contacts.get_contact(existing_contact[u"key"])
-        self.assertEqual(contact, existing_contact)
-
     def test_create_contact(self):
         contacts = self.make_client()
         contact_data = {
@@ -206,6 +208,7 @@ class TestContactsApiClient(TestCase):
         # The key is generated for us.
         expected_contact[u"key"] = contact[u"key"]
         self.assertEqual(contact, expected_contact)
+        self.assert_contact_status(contact[u"key"], exists=True)
 
     def test_create_contact_with_key(self):
         contacts = self.make_client()
@@ -216,3 +219,36 @@ class TestContactsApiClient(TestCase):
             u"surname": u"of Camelot",
         }
         self.assert_http_error(400, contacts.create_contact, contact_data)
+        self.assert_contact_status(u"foo", exists=False)
+
+    def test_get_contact(self):
+        contacts = self.make_client()
+        existing_contact = self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        })
+
+        contact = contacts.get_contact(existing_contact[u"key"])
+        self.assertEqual(contact, existing_contact)
+
+    def test_get_missing_contact(self):
+        contacts = self.make_client()
+        self.assert_http_error(404, contacts.get_contact, "foo")
+
+    def test_delete_contact(self):
+        contacts = self.make_client()
+        existing_contact = self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        })
+
+        self.assert_contact_status(existing_contact[u"key"], exists=True)
+        contact = contacts.delete_contact(existing_contact[u"key"])
+        self.assertEqual(contact, existing_contact)
+        self.assert_contact_status(existing_contact[u"key"], exists=False)
+
+    def test_delete_missing_contact(self):
+        contacts = self.make_client()
+        self.assert_http_error(404, contacts.delete_contact, "foo")

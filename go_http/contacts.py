@@ -51,6 +51,15 @@ class ContactsApiClient(object):
         r.raise_for_status()
         return r.json()
 
+    def create_contact(self, contact_data):
+        """
+        Create a contact.
+
+        :param dict contact_data:
+            Data for new contact.
+        """
+        return self._api_request("POST", "", contact_data)
+
     def get_contact(self, contact_key):
         """
         Get a contact.
@@ -60,11 +69,11 @@ class ContactsApiClient(object):
         """
         return self._api_request("GET", contact_key)
 
-    def create_contact(self, contact_data):
+    def delete_contact(self, contact_key):
         """
-        Create a contact.
+        Delete a contact.
 
-        :param dict contact_data:
-            Data for new contact.
+        :param str contact_key:
+            Key for the contact to delete.
         """
-        return self._api_request("POST", "", contact_data)
+        return self._api_request("DELETE", contact_key)
