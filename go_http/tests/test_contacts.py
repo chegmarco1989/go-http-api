@@ -3,6 +3,7 @@ Tests for go_http.contacts.
 """
 
 import json
+from uuid import uuid4
 from unittest import TestCase
 
 from requests import HTTPError
@@ -10,6 +11,34 @@ from requests.adapters import HTTPAdapter
 from requests_testadapter import TestSession, Resp, TestAdapter
 
 from go_http.contacts import ContactsApiClient
+
+
+def make_contact_dict(fields):
+    contact = {
+        # Always generate a key. It can be overridden by `fields`.
+        u'key': uuid4().hex,
+
+        # Some constant-for-our-purposes fields.
+        u'$VERSION': 2,
+        u'user_account': u'owner-1',
+        u'created_at': u'2014-07-25 12:44:11.159151',
+
+        # Everything else.
+        u'name': None,
+        u'surname': None,
+        u'groups': [],
+        u'msisdn': None,
+        u'twitter_handle': None,
+        u'bbm_pin': None,
+        u'mxit_id': None,
+        u'dob': None,
+        u'facebook_id': None,
+        u'wechat_id': None,
+        u'email_address': None,
+        u'gtalk_id': None,
+    }
+    contact.update(fields)
+    return contact
 
 
 class FakeContactsApi(object):
@@ -25,13 +54,19 @@ class FakeContactsApi(object):
         if not self.check_auth(request):
             return self.build_response("", 403)
 
-        path = request.path_url.replace("/go/contacts/", "")
         # TODO: Improve this as our server implementation grows.
+
+        contact_key = request.path_url.replace("/go/contacts", "").lstrip("/")
+        if not contact_key:
+            if request.method == "POST":
+                return self.create_contact(request)
+            else:
+                return self.build_response("", 405)
+
         if request.method == "GET":
-            if "/" in path:
-                return self.build_response("", 404)
-            return self.get_contact(path, request)
-        return self.build_response("", 405)
+            return self.get_contact(contact_key, request)
+        else:
+            return self.build_response("", 405)
 
     def check_auth(self, request):
         auth_header = request.headers.get("Authorization")
@@ -40,7 +75,17 @@ class FakeContactsApi(object):
     def build_response(self, content, code=200, headers=None):
         return Resp(content, code, headers)
 
+    def create_contact(self, request):
+        # TODO: Confirm this behaviour against the real API.
+        contact_data = json.loads(request.body)
+        if u"key" in contact_data:
+            return self.build_response("", 400)
+        contact = make_contact_dict(contact_data)
+        self.contacts_data[contact[u"key"]] = contact
+        return self.build_response(json.dumps(contact))
+
     def get_contact(self, path, request):
+        # TODO: Confirm this behaviour against the real API.
         contact = self.contacts_data.get(path)
         if contact is None:
             return self.build_response("Contact not found.", 404)
@@ -137,8 +182,37 @@ class TestContactsApiClient(TestCase):
         self.assert_http_error(404, contacts.get_contact, "foo")
 
     def test_get_contact(self):
-        # TODO: use a more realistic fake contact.
         contacts = self.make_client()
-        self.contacts_data[u"contact-1"] = {u"foo": u"bar"}
-        contact = contacts.get_contact("contact-1")
-        self.assertEqual(contact, {u"foo": u"bar"})
+        existing_contact = make_contact_dict({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        })
+        self.contacts_data[existing_contact[u"key"]] = existing_contact
+
+        contact = contacts.get_contact(existing_contact[u"key"])
+        self.assertEqual(contact, existing_contact)
+
+    def test_create_contact(self):
+        contacts = self.make_client()
+        contact_data = {
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        }
+        contact = contacts.create_contact(contact_data)
+
+        expected_contact = make_contact_dict(contact_data)
+        # The key is generated for us.
+        expected_contact[u"key"] = contact[u"key"]
+        self.assertEqual(contact, expected_contact)
+
+    def test_create_contact_with_key(self):
+        contacts = self.make_client()
+        contact_data = {
+            u"key": u"foo",
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        }
+        self.assert_http_error(400, contacts.create_contact, contact_data)

@@ -59,3 +59,12 @@ class ContactsApiClient(object):
             Key for the contact to get.
         """
         return self._api_request("GET", contact_key)
+
+    def create_contact(self, contact_data):
+        """
+        Create a contact.
+
+        :param dict contact_data:
+            Data for new contact.
+        """
+        return self._api_request("POST", "", contact_data)
