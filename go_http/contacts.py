@@ -69,6 +69,17 @@ class ContactsApiClient(object):
         """
         return self._api_request("GET", contact_key)
 
+    def update_contact(self, contact_key, update_data):
+        """
+        Update a contact.
+
+        :param str contact_key:
+            Key for the contact to update.
+        :param dict update_data:
+            Fields to modify.
+        """
+        return self._api_request("PUT", contact_key, update_data)
+
     def delete_contact(self, contact_key):
         """
         Delete a contact.
