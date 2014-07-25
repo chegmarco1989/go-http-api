@@ -69,7 +69,7 @@ class FakeContactsApiAdapter(HTTPAdapter):
         return r
 
 
-class TestHttpApiSender(TestCase):
+class TestContactsApiClient(TestCase):
     API_URL = "http://example.com/go/contacts"
     AUTH_TOKEN = "auth_token"
 
