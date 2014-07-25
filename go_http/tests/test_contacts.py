@@ -74,8 +74,8 @@ class FakeContactsApi(object):
             if request.method == "GET":
                 return self.get_contact(contact_key, request)
             elif request.method == "PUT":
-                # NOTE: This is an incorrect use of the PUT method, but it's what
-                # we have for now.
+                # NOTE: This is an incorrect use of the PUT method, but it's
+                # what we have for now.
                 return self.update_contact(contact_key, request)
             elif request.method == "DELETE":
                 return self.delete_contact(contact_key, request)
