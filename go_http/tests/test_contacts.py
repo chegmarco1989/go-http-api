@@ -128,6 +128,25 @@ class TestContactsApiClient(TestCase):
         self.assertEqual(contact, expected_contact)
         self.assert_contact_status(contact[u"key"], exists=True)
 
+    def test_create_contact_with_extras(self):
+        contacts = self.make_client()
+        contact_data = {
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+            u"extra": {
+                u"quest": u"Grail",
+                u"sidekick": u"Percy",
+            },
+        }
+        contact = contacts.create_contact(contact_data)
+
+        expected_contact = make_contact_dict(contact_data)
+        # The key is generated for us.
+        expected_contact[u"key"] = contact[u"key"]
+        self.assertEqual(contact, expected_contact)
+        self.assert_contact_status(contact[u"key"], exists=True)
+
     def test_create_contact_with_key(self):
         contacts = self.make_client()
         contact_data = {
@@ -150,6 +169,21 @@ class TestContactsApiClient(TestCase):
         contact = contacts.get_contact(existing_contact[u"key"])
         self.assertEqual(contact, existing_contact)
 
+    def test_get_contact_with_extras(self):
+        contacts = self.make_client()
+        existing_contact = self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+            u"extra": {
+                u"quest": u"Grail",
+                u"sidekick": u"Percy",
+            },
+        })
+
+        contact = contacts.get_contact(existing_contact[u"key"])
+        self.assertEqual(contact, existing_contact)
+
     def test_get_missing_contact(self):
         contacts = self.make_client()
         self.assert_http_error(404, contacts.get_contact, "foo")
@@ -167,6 +201,34 @@ class TestContactsApiClient(TestCase):
 
         contact = contacts.update_contact(
             existing_contact[u"key"], {u"surname": u"Pendragon"})
+        self.assertEqual(contact, new_contact)
+
+    def test_update_contact_with_extras(self):
+        contacts = self.make_client()
+        existing_contact = self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+            u"extra": {
+                u"quest": u"Grail",
+                u"sidekick": u"Percy",
+            },
+        })
+
+        new_contact = existing_contact.copy()
+        new_contact[u"surname"] = u"Pendragon"
+        new_contact[u"extra"] = {
+            u"quest": u"lunch",
+            u"knight": u"Lancelot",
+        }
+
+        contact = contacts.update_contact(existing_contact[u"key"], {
+            u"surname": u"Pendragon",
+            u"extra": {
+                u"quest": u"lunch",
+                u"knight": u"Lancelot",
+            },
+        })
         self.assertEqual(contact, new_contact)
 
     def test_update_missing_contact(self):
