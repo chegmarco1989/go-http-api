@@ -299,7 +299,7 @@ class TestContactsApiClient(TestCase):
         }
         self.assert_http_error(400, client.create_group, group_data)
 
-    def test_create_group(self):
+    def test_get_group(self):
         client = self.make_client()
         existing_group = self.make_existing_group({
             u'name': 'Bob',
