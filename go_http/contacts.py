@@ -106,3 +106,14 @@ class ContactsApiClient(object):
             Key for the group to get
         """
         return self._api_request("GET", "groups", group_key)
+
+    def update_group(self, group_key, update_data):
+        """
+        Update a group.
+
+        :param str group_key
+            Key for the group to update.
+        :param str update_data
+            Fields to modify.
+        """
+        return self._api_request("PUT", "groups", group_key, update_data)

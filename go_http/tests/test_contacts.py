@@ -319,3 +319,36 @@ class TestContactsApiClient(TestCase):
     def test_get_missing_group(self):
         client = self.make_client()
         self.assert_http_error(404, client.get_group, 'foo')
+
+    def test_update_group(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': u'Bob',
+        })
+
+        new_group = existing_group.copy()
+        new_group[u'name'] = u'Susan'
+
+        group = client.update_group(existing_group[u'key'],
+                                    {'name': 'Susan'})
+        self.assertEqual(existing_group, group)
+        self.assertEqual(group, new_group)
+
+    def test_update_smart_group(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': u'Bob',
+            u'query': u'test-query',
+        })
+
+        new_group = existing_group.copy()
+        new_group[u'query'] = u'another-query'
+
+        group = client.update_group(existing_group[u'key'],
+                                    {'query': 'another-query'})
+        self.assertEqual(existing_group, group)
+        self.assertEqual(group, new_group)
+
+    def test_update_missing_group(self):
+        client = self.make_client()
+        self.assert_http_error(404, client.update_group, 'foo', {})
