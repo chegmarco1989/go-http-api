@@ -39,6 +39,7 @@ class FakeContactsApiAdapter(HTTPAdapter):
 
 
 make_contact_dict = FakeContactsApi.make_contact_dict
+make_group_dict = FakeContactsApi.make_group_dict
 
 
 class TestContactsApiClient(TestCase):
@@ -47,8 +48,9 @@ class TestContactsApiClient(TestCase):
 
     def setUp(self):
         self.contacts_data = {}
+        self.groups_data = {}
         self.contacts_backend = FakeContactsApi(
-            "go/", self.AUTH_TOKEN, self.contacts_data)
+            "go/", self.AUTH_TOKEN, self.contacts_data, self.groups_data)
         self.session = TestSession()
         adapter = FakeContactsApiAdapter(self.contacts_backend)
         self.session.mount(self.API_URL, adapter)
@@ -64,6 +66,10 @@ class TestContactsApiClient(TestCase):
 
     def assert_contact_status(self, contact_key, exists=True):
         exists_status = (contact_key in self.contacts_data)
+        self.assertEqual(exists_status, exists)
+
+    def assert_group_status(self, group_key, exists=True):
+        exists_status = (group_key in self.groups_data)
         self.assertEqual(exists_status, exists)
 
     def assert_http_error(self, expected_status, func, *args, **kw):
@@ -251,3 +257,39 @@ class TestContactsApiClient(TestCase):
     def test_delete_missing_contact(self):
         contacts = self.make_client()
         self.assert_http_error(404, contacts.delete_contact, "foo")
+
+    def test_create_group(self):
+        client = self.make_client()
+        group_data = {
+            u'name': u'Bob',
+        }
+        group = client.create_group(group_data)
+
+        expected_group = make_group_dict(group_data)
+        # The key is generated for us.
+        expected_group[u'key'] = group[u'key']
+        self.assertEqual(group, expected_group)
+        self.assert_group_status(group[u'key'], exists=True)
+
+    def test_create_smart_group(self):
+        client = self.make_client()
+        group_data = {
+            u'name': u'Bob',
+            u'query': u'test-query',
+        }
+        group = client.create_group(group_data)
+
+        expected_group = make_group_dict(group_data)
+        # The key is generated for us
+        expected_group[u'key'] = group[u'key']
+        self.assertEqual(group, expected_group)
+        self.assert_group_status(group[u'key'], exists=True)
+
+    def test_create_group_with_key(self):
+        client = self.make_client()
+        group_data = {
+            u'key': u'foo',
+            u'name': u'Bob',
+            u'query': u'test-query',
+        }
+        self.assert_http_error(400, client.create_group, group_data)

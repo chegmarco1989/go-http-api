@@ -41,7 +41,6 @@ class ContactsApiClient(object):
 
     def _api_request(self, method, api_collection, api_path, data=None):
         url = "%s/%s/%s" % (self.api_url, api_collection, api_path)
-        print url
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": "Bearer %s" % (self.auth_token,),
@@ -89,3 +88,12 @@ class ContactsApiClient(object):
             Key for the contact to delete.
         """
         return self._api_request("DELETE", "contacts", contact_key)
+
+    def create_group(self, group_data):
+        """
+        Create a group.
+
+        :param dict group_data:
+            Data for new group.
+        """
+        return self._api_request("POST", "groups", "", group_data)
