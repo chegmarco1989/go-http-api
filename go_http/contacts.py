@@ -97,3 +97,12 @@ class ContactsApiClient(object):
             Data for new group.
         """
         return self._api_request("POST", "groups", "", group_data)
+
+    def get_group(self, group_key):
+        """
+        Get a group
+
+        :param str group_key:
+            Key for the group to get
+        """
+        return self._api_request("GET", "groups", group_key)

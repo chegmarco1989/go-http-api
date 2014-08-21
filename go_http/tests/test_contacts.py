@@ -64,6 +64,11 @@ class TestContactsApiClient(TestCase):
         self.contacts_data[existing_contact[u"key"]] = existing_contact
         return existing_contact
 
+    def make_existing_group(self, group_data):
+        existing_group = make_group_dict(group_data)
+        self.groups_data[existing_group[u'key']] = existing_group
+        return existing_group
+
     def assert_contact_status(self, contact_key, exists=True):
         exists_status = (contact_key in self.contacts_data)
         self.assertEqual(exists_status, exists)
@@ -293,3 +298,24 @@ class TestContactsApiClient(TestCase):
             u'query': u'test-query',
         }
         self.assert_http_error(400, client.create_group, group_data)
+
+    def test_create_group(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': 'Bob',
+        })
+        group = client.get_group(existing_group[u'key'])
+        self.assertEqual(group, existing_group)
+
+    def test_get_smart_group(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': 'Bob',
+            u'query': 'test-query',
+        })
+        group = client.get_group(existing_group[u'key'])
+        self.assertEqual(group, existing_group)
+
+    def test_get_missing_group(self):
+        client = self.make_client()
+        self.assert_http_error(404, client.get_group, 'foo')
