@@ -42,7 +42,7 @@ make_contact_dict = FakeContactsApi.make_contact_dict
 
 
 class TestContactsApiClient(TestCase):
-    API_URL = "http://example.com/go/contacts"
+    API_URL = "http://example.com/go"
     AUTH_TOKEN = "auth_token"
 
     def setUp(self):
@@ -107,7 +107,7 @@ class TestContactsApiClient(TestCase):
     def test_default_api_url(self):
         contacts = ContactsApiClient(self.AUTH_TOKEN)
         self.assertEqual(
-            contacts.api_url, "http://go.vumi.org/api/v1/go/contacts")
+            contacts.api_url, "http://go.vumi.org/api/v1/go")
 
     def test_auth_failure(self):
         contacts = self.make_client(auth_token="bogus_token")
