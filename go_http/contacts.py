@@ -117,3 +117,12 @@ class ContactsApiClient(object):
             Fields to modify.
         """
         return self._api_request("PUT", "groups", group_key, update_data)
+
+    def delete_group(self, group_key):
+        """
+        Delete a group.
+
+        :param str group_key
+            Key for the group to delete.
+        """
+        return self._api_request("DELETE", "groups", group_key)

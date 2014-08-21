@@ -352,3 +352,18 @@ class TestContactsApiClient(TestCase):
     def test_update_missing_group(self):
         client = self.make_client()
         self.assert_http_error(404, client.update_group, 'foo', {})
+
+    def test_delete_group(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': u'Bob'
+        })
+
+        self.assert_group_status(existing_group[u'key'], exists=True)
+        group = client.delete_group(existing_group[u'key'])
+        self.assertEqual(existing_group, group)
+        self.assert_group_status(group[u'key'], exists=False)
+
+    def test_delete_missing_group(self):
+        client = self.make_client()
+        self.assert_http_error(404, client.delete_group, 'foo')
