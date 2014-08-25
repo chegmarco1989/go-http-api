@@ -39,16 +39,18 @@ class FakeContactsApiAdapter(HTTPAdapter):
 
 
 make_contact_dict = FakeContactsApi.make_contact_dict
+make_group_dict = FakeContactsApi.make_group_dict
 
 
 class TestContactsApiClient(TestCase):
-    API_URL = "http://example.com/go/contacts"
+    API_URL = "http://example.com/go"
     AUTH_TOKEN = "auth_token"
 
     def setUp(self):
         self.contacts_data = {}
+        self.groups_data = {}
         self.contacts_backend = FakeContactsApi(
-            "go/", self.AUTH_TOKEN, self.contacts_data)
+            "go/", self.AUTH_TOKEN, self.contacts_data, self.groups_data)
         self.session = TestSession()
         adapter = FakeContactsApiAdapter(self.contacts_backend)
         self.session.mount(self.API_URL, adapter)
@@ -62,8 +64,17 @@ class TestContactsApiClient(TestCase):
         self.contacts_data[existing_contact[u"key"]] = existing_contact
         return existing_contact
 
+    def make_existing_group(self, group_data):
+        existing_group = make_group_dict(group_data)
+        self.groups_data[existing_group[u'key']] = existing_group
+        return existing_group
+
     def assert_contact_status(self, contact_key, exists=True):
         exists_status = (contact_key in self.contacts_data)
+        self.assertEqual(exists_status, exists)
+
+    def assert_group_status(self, group_key, exists=True):
+        exists_status = (group_key in self.groups_data)
         self.assertEqual(exists_status, exists)
 
     def assert_http_error(self, expected_status, func, *args, **kw):
@@ -107,7 +118,7 @@ class TestContactsApiClient(TestCase):
     def test_default_api_url(self):
         contacts = ContactsApiClient(self.AUTH_TOKEN)
         self.assertEqual(
-            contacts.api_url, "http://go.vumi.org/api/v1/go/contacts")
+            contacts.api_url, "http://go.vumi.org/api/v1/go")
 
     def test_auth_failure(self):
         contacts = self.make_client(auth_token="bogus_token")
@@ -251,3 +262,108 @@ class TestContactsApiClient(TestCase):
     def test_delete_missing_contact(self):
         contacts = self.make_client()
         self.assert_http_error(404, contacts.delete_contact, "foo")
+
+    def test_create_group(self):
+        client = self.make_client()
+        group_data = {
+            u'name': u'Bob',
+        }
+        group = client.create_group(group_data)
+
+        expected_group = make_group_dict(group_data)
+        # The key is generated for us.
+        expected_group[u'key'] = group[u'key']
+        self.assertEqual(group, expected_group)
+        self.assert_group_status(group[u'key'], exists=True)
+
+    def test_create_smart_group(self):
+        client = self.make_client()
+        group_data = {
+            u'name': u'Bob',
+            u'query': u'test-query',
+        }
+        group = client.create_group(group_data)
+
+        expected_group = make_group_dict(group_data)
+        # The key is generated for us
+        expected_group[u'key'] = group[u'key']
+        self.assertEqual(group, expected_group)
+        self.assert_group_status(group[u'key'], exists=True)
+
+    def test_create_group_with_key(self):
+        client = self.make_client()
+        group_data = {
+            u'key': u'foo',
+            u'name': u'Bob',
+            u'query': u'test-query',
+        }
+        self.assert_http_error(400, client.create_group, group_data)
+
+    def test_get_group(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': 'Bob',
+        })
+        group = client.get_group(existing_group[u'key'])
+        self.assertEqual(group, existing_group)
+
+    def test_get_smart_group(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': 'Bob',
+            u'query': 'test-query',
+        })
+        group = client.get_group(existing_group[u'key'])
+        self.assertEqual(group, existing_group)
+
+    def test_get_missing_group(self):
+        client = self.make_client()
+        self.assert_http_error(404, client.get_group, 'foo')
+
+    def test_update_group(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': u'Bob',
+        })
+
+        new_group = existing_group.copy()
+        new_group[u'name'] = u'Susan'
+
+        group = client.update_group(existing_group[u'key'],
+                                    {'name': 'Susan'})
+        self.assertEqual(existing_group, group)
+        self.assertEqual(group, new_group)
+
+    def test_update_smart_group(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': u'Bob',
+            u'query': u'test-query',
+        })
+
+        new_group = existing_group.copy()
+        new_group[u'query'] = u'another-query'
+
+        group = client.update_group(existing_group[u'key'],
+                                    {'query': 'another-query'})
+        self.assertEqual(existing_group, group)
+        self.assertEqual(group, new_group)
+
+    def test_update_missing_group(self):
+        client = self.make_client()
+        self.assert_http_error(404, client.update_group, 'foo', {})
+
+    def test_delete_group(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': u'Bob'
+        })
+
+        self.assert_group_status(existing_group[u'key'], exists=True)
+        group = client.delete_group(existing_group[u'key'])
+        self.assertEqual(existing_group, group)
+        self.assert_group_status(group[u'key'], exists=False)
+
+    def test_delete_missing_group(self):
+        client = self.make_client()
+        self.assert_http_error(404, client.delete_group, 'foo')
