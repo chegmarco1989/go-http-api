@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="go_http",
-    version="0.2.0a",
+    version="0.2.1a",
     url='http://github.com/praekelt/go-http-api',
     license='BSD',
     description="A client library for Vumi Go's HTTP API",
