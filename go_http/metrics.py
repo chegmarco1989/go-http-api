@@ -54,7 +54,6 @@ class MetricsApiClient(object):
         r.raise_for_status()
         return r.json()
 
-
     def get_metric(self, metric, start, interval, nulls):
         """
         Get a metric.
