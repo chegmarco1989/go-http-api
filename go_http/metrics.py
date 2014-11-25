@@ -41,7 +41,6 @@ class MetricsApiClient(object):
 
     def _api_request(self, method, api_collection, data=None):
         url = "%s/%s" % (self.api_url, api_collection)
-        print url
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": "Bearer %s" % (self.auth_token,),

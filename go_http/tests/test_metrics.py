@@ -6,7 +6,6 @@ TODO: Some Tests
 """
 
 import json
-import logging
 from unittest import TestCase
 
 from requests_testadapter import TestAdapter, TestSession
@@ -64,14 +63,13 @@ class TestMetricApiReader(TestCase):
                                                              u'y': 92786.0}]}
         adapter = RecordingAdapter(json.dumps(response))
         self.session.mount(
-            "http://example.com/api/v1/go"
-            "metrics?m=stores.store_name.metric_name.agg&interval=1d&from=-30d&nulls=omit", adapter)
+            "http://example.com/api/v1/go/"
+            "metrics?m=stores.store_name.metric_name.agg"
+            "&interval=1d&from=-30d&nulls=omit", adapter)
 
         result = self.sender.get_metric("stores.store_name.metric_name.agg", "-30d", "1d", "omit")
         self.assertEqual(result, response)
         self.check_request(
             adapter.request, 'GET',
-            params={"m": "stores.store_name.metric_name.agg", 
-                    "from": "-30d", "interval": "1d" , "nulls": "omit"
-            },
-            headers={"Authorization": u'Basic YWNjLWtleTpjb252LXRva2Vu'})
+            None,
+            headers={"Authorization": u'Bearer auth-token'})
