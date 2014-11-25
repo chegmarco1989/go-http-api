@@ -39,8 +39,9 @@ class MetricsApiClient(object):
             session = requests.Session()
         self.session = session
 
-    def _api_request(self, method, api_collection, api_path, data=None):
-        url = "%s/%s/%s" % (self.api_url, api_collection, api_path)
+    def _api_request(self, method, api_collection, data=None):
+        url = "%s/%s" % (self.api_url, api_collection)
+        print url
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": "Bearer %s" % (self.auth_token,),
@@ -73,4 +74,4 @@ class MetricsApiClient(object):
             "interval": interval,
             "nulls": nulls
         }
-        return self._api_request("GET", "metrics", "", payload)
+        return self._api_request("GET", "metrics", payload)
