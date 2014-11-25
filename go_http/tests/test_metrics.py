@@ -43,10 +43,8 @@ class TestMetricApiReader(TestCase):
         self.assertEqual(client.api_url,
                          "http://go.vumi.org/api/v1/go")
 
-    def check_request(self, request, method, data=None, headers=None):
+    def check_request(self, request, method, headers=None):
         self.assertEqual(request.method, method)
-        if data is not None:
-            self.assertEqual(json.loads(request.body), data)
         if headers is not None:
             for key, value in headers.items():
                 self.assertEqual(request.headers[key], value)
@@ -74,5 +72,4 @@ class TestMetricApiReader(TestCase):
         self.assertEqual(result, response)
         self.check_request(
             adapter.request, 'GET',
-            None,
             headers={"Authorization": u'Bearer auth-token'})
