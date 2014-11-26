@@ -73,4 +73,4 @@ class MetricsApiClient(object):
             "interval": interval,
             "nulls": nulls
         }
-        return self._api_request("GET", "metrics", payload)
+        return self._api_request("GET", "metrics/", payload)
