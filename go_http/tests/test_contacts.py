@@ -124,6 +124,16 @@ class TestContactsApiClient(TestCase):
         contacts = self.make_client(auth_token="bogus_token")
         self.assert_http_error(403, contacts.get_contact, "foo")
 
+    def test_contacts_single_page(self):
+        expected_contact = self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        })
+        contacts_api = self.make_client()
+        [contact] = list(contacts_api.contacts())
+        self.assertEqual(contact, expected_contact)
+
     def test_create_contact(self):
         contacts = self.make_client()
         contact_data = {
