@@ -134,6 +134,26 @@ class TestContactsApiClient(TestCase):
         [contact] = list(contacts_api.contacts())
         self.assertEqual(contact, expected_contact)
 
+    def test_contacts_no_results(self):
+        contacts_api = self.make_client()
+        contacts = list(contacts_api.contacts())
+        self.assertEqual(contacts, [])
+
+    def test_contacts_multiple_pages(self):
+        expected_contacts = []
+        # each page has 10 contacts
+        for i in range(11):
+            expected_contacts.append(self.make_existing_contact({
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+            }))
+        contacts_api = self.make_client()
+        contacts = list(contacts_api.contacts())
+        sort_by_msidn = lambda l: sorted(l, key=lambda d: d['msisdn'])
+        self.assertEqual(
+            sort_by_msidn(contacts), sort_by_msidn(expected_contacts))
+
     def test_create_contact(self):
         contacts = self.make_client()
         contact_data = {
