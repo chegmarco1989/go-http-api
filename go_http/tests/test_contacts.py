@@ -46,11 +46,14 @@ class TestContactsApiClient(TestCase):
     API_URL = "http://example.com/go"
     AUTH_TOKEN = "auth_token"
 
+    MAX_CONTACTS_PER_PAGE = 10
+
     def setUp(self):
         self.contacts_data = {}
         self.groups_data = {}
         self.contacts_backend = FakeContactsApi(
-            "go/", self.AUTH_TOKEN, self.contacts_data, self.groups_data)
+            "go/", self.AUTH_TOKEN, self.contacts_data, self.groups_data,
+            contacts_limit=self.MAX_CONTACTS_PER_PAGE)
         self.session = TestSession()
         adapter = FakeContactsApiAdapter(self.contacts_backend)
         self.session.mount(self.API_URL, adapter)
@@ -141,8 +144,7 @@ class TestContactsApiClient(TestCase):
 
     def test_contacts_multiple_pages(self):
         expected_contacts = []
-        # each page has 10 contacts
-        for i in range(11):
+        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
             expected_contacts.append(self.make_existing_contact({
                 u"msisdn": u"+155564%d" % (i,),
                 u"name": u"Arthur",
