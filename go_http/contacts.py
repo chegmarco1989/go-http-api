@@ -51,6 +51,24 @@ class ContactsApiClient(object):
         r.raise_for_status()
         return r.json()
 
+    def contacts(self):
+        """
+        Retrieve all contacts.
+
+        This uses the API's paginated contact download.
+
+        :returns:
+            An iterator over all contacts.
+        """
+        page = self._api_request("GET", "contacts", "")
+        while True:
+            for contact in page['data']:
+                yield contact
+            if page['cursor'] is None:
+                break
+            page = self._api_request(
+                "GET", "contacts", "?cursor=%s" % page['cursor'])
+
     def create_contact(self, contact_data):
         """
         Create a contact.

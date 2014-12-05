@@ -46,11 +46,14 @@ class TestContactsApiClient(TestCase):
     API_URL = "http://example.com/go"
     AUTH_TOKEN = "auth_token"
 
+    MAX_CONTACTS_PER_PAGE = 10
+
     def setUp(self):
         self.contacts_data = {}
         self.groups_data = {}
         self.contacts_backend = FakeContactsApi(
-            "go/", self.AUTH_TOKEN, self.contacts_data, self.groups_data)
+            "go/", self.AUTH_TOKEN, self.contacts_data, self.groups_data,
+            contacts_limit=self.MAX_CONTACTS_PER_PAGE)
         self.session = TestSession()
         adapter = FakeContactsApiAdapter(self.contacts_backend)
         self.session.mount(self.API_URL, adapter)
@@ -123,6 +126,35 @@ class TestContactsApiClient(TestCase):
     def test_auth_failure(self):
         contacts = self.make_client(auth_token="bogus_token")
         self.assert_http_error(403, contacts.get_contact, "foo")
+
+    def test_contacts_single_page(self):
+        expected_contact = self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        })
+        contacts_api = self.make_client()
+        [contact] = list(contacts_api.contacts())
+        self.assertEqual(contact, expected_contact)
+
+    def test_contacts_no_results(self):
+        contacts_api = self.make_client()
+        contacts = list(contacts_api.contacts())
+        self.assertEqual(contacts, [])
+
+    def test_contacts_multiple_pages(self):
+        expected_contacts = []
+        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
+            expected_contacts.append(self.make_existing_contact({
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+            }))
+        contacts_api = self.make_client()
+        contacts = list(contacts_api.contacts())
+        sort_by_msidn = lambda l: sorted(l, key=lambda d: d['msisdn'])
+        self.assertEqual(
+            sort_by_msidn(contacts), sort_by_msidn(expected_contacts))
 
     def test_create_contact(self):
         contacts = self.make_client()
