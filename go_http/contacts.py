@@ -51,16 +51,20 @@ class ContactsApiClient(object):
         r.raise_for_status()
         return r.json()
 
-    def contacts(self):
+    def contacts(self, start_cursor=""):
         """
         Retrieve all contacts.
 
         This uses the API's paginated contact download.
 
+        :param start_cursor:
+            An optional parameter that declares the cursor to start fetching
+            the contacts from.
+
         :returns:
             An iterator over all contacts.
         """
-        page = self._api_request("GET", "contacts", "")
+        page = self._api_request("GET", "contacts", start_cursor)
         while True:
             for contact in page['data']:
                 yield contact
