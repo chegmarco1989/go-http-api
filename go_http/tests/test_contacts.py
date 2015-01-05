@@ -156,6 +156,28 @@ class TestContactsApiClient(TestCase):
         self.assertEqual(
             sort_by_msidn(contacts), sort_by_msidn(expected_contacts))
 
+    def test_contacts_multiple_pages_with_cursor(self):
+        expected_contacts = []
+        for i in range(self.MAX_CONTACTS_PER_PAGE):
+            expected_contacts.append(self.make_existing_contact({
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+            }))
+        expected_contacts.append(self.make_existing_contact({
+            u"msisdn": u"+15556",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        }))
+        contacts_api = self.make_client()
+        first_page = contacts_api._api_request("GET", "contacts", "")
+        cursor = first_page['cursor']
+        contacts = list(contacts_api.contacts(start_cursor=cursor))
+        contacts.extend(first_page['data'])
+        sort_by_msidn = lambda l: sorted(l, key=lambda d: d['msisdn'])
+        self.assertEqual(
+            sort_by_msidn(contacts), sort_by_msidn(expected_contacts))
+
     def test_create_contact(self):
         contacts = self.make_client()
         contact_data = {

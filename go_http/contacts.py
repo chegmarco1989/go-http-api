@@ -51,7 +51,7 @@ class ContactsApiClient(object):
         r.raise_for_status()
         return r.json()
 
-    def contacts(self, start_cursor=""):
+    def contacts(self, start_cursor=None):
         """
         Retrieve all contacts.
 
@@ -64,7 +64,11 @@ class ContactsApiClient(object):
         :returns:
             An iterator over all contacts.
         """
-        page = self._api_request("GET", "contacts", start_cursor)
+        if start_cursor:
+            page = self._api_request(
+                "GET", "contacts", "?cursor=%s" % start_cursor)
+        else:
+            page = self._api_request("GET", "contacts", "")
         while True:
             for contact in page['data']:
                 yield contact
