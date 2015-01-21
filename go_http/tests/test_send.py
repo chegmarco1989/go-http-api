@@ -7,6 +7,7 @@ from unittest import TestCase
 from requests_testadapter import TestAdapter, TestSession
 
 from go_http.send import HttpApiSender, LoggingSender
+from go_http.exceptions import UserOptedOutException
 
 
 class RecordingAdapter(TestAdapter):
@@ -63,6 +64,27 @@ class TestHttpApiSender(TestCase):
             adapter.request, 'PUT',
             data={"content": "Hello!", "to_addr": "to-addr-1"},
             headers={"Authorization": u'Basic YWNjLWtleTpjb252LXRva2Vu'})
+
+    def test_send_to_opted_out(self):
+        """
+        UserOptedOutException raised for sending messages to opted out
+        recipients
+        """
+        self.session.mount(
+            "http://example.com/api/v1/go/http_api_nostream/conv-key/"
+            "messages.json", TestAdapter(
+                json.dumps({
+                    "success": False,
+                    "reason": "Recipient with msisdn to-addr-1 has opted out"}
+                    ),
+                status=400))
+        with self.assertRaises(UserOptedOutException) as e:
+            self.sender.send_text('to-addr-1', "foo")
+        exception = e.exception
+        self.assertEqual(exception.to_addr, 'to-addr-1')
+        self.assertEqual(exception.message, 'foo')
+        self.assertEqual(
+            exception.reason, 'Recipient with msisdn to-addr-1 has opted out')
 
     def test_fire_metric(self):
         adapter = RecordingAdapter(
