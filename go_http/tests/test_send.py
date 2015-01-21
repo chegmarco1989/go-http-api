@@ -78,13 +78,13 @@ class TestHttpApiSender(TestCase):
                     "reason": "Recipient with msisdn to-addr-1 has opted out"}
                     ),
                 status=400))
-        with self.assertRaises(UserOptedOutException) as e:
+        try:
             self.sender.send_text('to-addr-1', "foo")
-        exception = e.exception
-        self.assertEqual(exception.to_addr, 'to-addr-1')
-        self.assertEqual(exception.message, 'foo')
-        self.assertEqual(
-            exception.reason, 'Recipient with msisdn to-addr-1 has opted out')
+        except UserOptedOutException as e:
+            self.assertEqual(e.to_addr, 'to-addr-1')
+            self.assertEqual(e.message, 'foo')
+            self.assertEqual(
+                e.reason, 'Recipient with msisdn to-addr-1 has opted out')
 
     def test_fire_metric(self):
         adapter = RecordingAdapter(
