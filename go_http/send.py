@@ -75,7 +75,7 @@ class HttpApiSender(object):
             response = e.response.json()
             if (
                     e.response.status_code != 400 or
-                    'opted out' not in response.get('reason') or
+                    'opted out' not in response.get('reason', '') or
                     response.get('success')):
                 raise e
             raise UserOptedOutException(
