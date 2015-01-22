@@ -9,6 +9,8 @@ from requests_testadapter import TestAdapter, TestSession
 from go_http.send import HttpApiSender, LoggingSender
 from go_http.exceptions import UserOptedOutException
 
+from requests.exceptions import HTTPError
+
 
 class RecordingAdapter(TestAdapter):
     """ Record the request that was handled by the adapter.
@@ -78,13 +80,34 @@ class TestHttpApiSender(TestCase):
                     "reason": "Recipient with msisdn to-addr-1 has opted out"}
                     ),
                 status=400))
-        with self.assertRaises(UserOptedOutException) as e:
+        try:
             self.sender.send_text('to-addr-1', "foo")
-        exception = e.exception
-        self.assertEqual(exception.to_addr, 'to-addr-1')
-        self.assertEqual(exception.message, 'foo')
-        self.assertEqual(
-            exception.reason, 'Recipient with msisdn to-addr-1 has opted out')
+        except UserOptedOutException as e:
+            self.assertEqual(e.to_addr, 'to-addr-1')
+            self.assertEqual(e.message, 'foo')
+            self.assertEqual(
+                e.reason, 'Recipient with msisdn to-addr-1 has opted out')
+
+    def test_send_to_other_http_error(self):
+        """
+        HTTP errors should not be raised as UserOptedOutExceptions if they are
+        not user opted out errors.
+        """
+        self.session.mount(
+            "http://example.com/api/v1/go/http_api_nostream/conv-key/"
+            "messages.json", TestAdapter(
+                json.dumps({
+                    "success": False,
+                    "reason": "No unicorns were found"
+                    }),
+                status=400))
+        try:
+            self.sender.send_text('to-addr-1', 'foo')
+        except HTTPError as e:
+            self.assertEqual(e.response.status_code, 400)
+            response = e.response.json()
+            self.assertFalse(response['success'])
+            self.assertEqual(response['reason'], "No unicorns were found")
 
     def test_fire_metric(self):
         adapter = RecordingAdapter(
