@@ -39,7 +39,8 @@ class ContactsApiClient(object):
             session = requests.Session()
         self.session = session
 
-    def _api_request(self, method, api_collection, api_path, data=None):
+    def _api_request(
+            self, method, api_collection, api_path, data=None, params=None):
         url = "%s/%s/%s" % (self.api_url, api_collection, api_path)
         headers = {
             "Content-Type": "application/json; charset=utf-8",
@@ -47,7 +48,8 @@ class ContactsApiClient(object):
         }
         if data is not None:
             data = json.dumps(data)
-        r = self.session.request(method, url, data=data, headers=headers)
+        r = self.session.request(
+            method, url, data=data, headers=headers, params=params)
         r.raise_for_status()
         return r.json()
 
