@@ -97,6 +97,19 @@ class ContactsApiClient(object):
         """
         return self._api_request("GET", "contacts", contact_key)
 
+    def get_contact_from_field(self, field, value):
+        """
+        Get a contact given a field and a value for that field.
+
+        :param str field:
+            Field that is searched on (eg. ``MSISDN``)
+        :param str value:
+            Value that the field must match (eg. ``+12345``)
+        """
+        contact = self._api_request(
+            "GET", "contacts", "", params={'query': '%s=%s' % (field, value)})
+        return contact.get('data')[0]
+
     def update_contact(self, contact_key, update_data):
         """
         Update a contact.
