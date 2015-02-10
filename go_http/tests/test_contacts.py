@@ -152,9 +152,11 @@ class TestContactsApiClient(TestCase):
             }))
         contacts_api = self.make_client()
         contacts = list(contacts_api.contacts())
-        sort_by_msidn = lambda l: sorted(l, key=lambda d: d['msisdn'])
-        self.assertEqual(
-            sort_by_msidn(contacts), sort_by_msidn(expected_contacts))
+
+        contacts.sort(key=lambda d: d['msisdn'])
+        expected_contacts.sort(key=lambda d: d['msisdn'])
+
+        self.assertEqual(contacts, expected_contacts)
 
     def test_contacts_multiple_pages_with_cursor(self):
         expected_contacts = []
@@ -174,9 +176,9 @@ class TestContactsApiClient(TestCase):
         cursor = first_page['cursor']
         contacts = list(contacts_api.contacts(start_cursor=cursor))
         contacts.extend(first_page['data'])
-        sort_by_msidn = lambda l: sorted(l, key=lambda d: d['msisdn'])
-        self.assertEqual(
-            sort_by_msidn(contacts), sort_by_msidn(expected_contacts))
+        contacts.sort(key=lambda d: d['msisdn'])
+        expected_contacts.sort(key=lambda d: d['msisdn'])
+        self.assertEqual(contacts, expected_contacts)
 
     def test_create_contact(self):
         contacts = self.make_client()
