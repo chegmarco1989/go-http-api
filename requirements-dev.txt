@@ -1,8 +1,7 @@
-pep8
-pyflakes
+flake8
 coverage
 pytest
 pytest-xdist
 pytest-cov
 requests_testadapter
-fake-go-contacts>=0.1.3
+fake-go-contacts>=0.1.8

@@ -152,9 +152,11 @@ class TestContactsApiClient(TestCase):
             }))
         contacts_api = self.make_client()
         contacts = list(contacts_api.contacts())
-        sort_by_msidn = lambda l: sorted(l, key=lambda d: d['msisdn'])
-        self.assertEqual(
-            sort_by_msidn(contacts), sort_by_msidn(expected_contacts))
+
+        contacts.sort(key=lambda d: d['msisdn'])
+        expected_contacts.sort(key=lambda d: d['msisdn'])
+
+        self.assertEqual(contacts, expected_contacts)
 
     def test_contacts_multiple_pages_with_cursor(self):
         expected_contacts = []
@@ -174,9 +176,9 @@ class TestContactsApiClient(TestCase):
         cursor = first_page['cursor']
         contacts = list(contacts_api.contacts(start_cursor=cursor))
         contacts.extend(first_page['data'])
-        sort_by_msidn = lambda l: sorted(l, key=lambda d: d['msisdn'])
-        self.assertEqual(
-            sort_by_msidn(contacts), sort_by_msidn(expected_contacts))
+        contacts.sort(key=lambda d: d['msisdn'])
+        expected_contacts.sort(key=lambda d: d['msisdn'])
+        self.assertEqual(contacts, expected_contacts)
 
     def test_create_contact(self):
         contacts = self.make_client()
@@ -252,6 +254,28 @@ class TestContactsApiClient(TestCase):
     def test_get_missing_contact(self):
         contacts = self.make_client()
         self.assert_http_error(404, contacts.get_contact, "foo")
+
+    def test_get_contact_from_field(self):
+        contacts = self.make_client()
+        existing_contact = self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        })
+
+        contact = contacts.get_contact(msisdn='+15556483')
+        self.assertEqual(contact, existing_contact)
+
+    def test_get_contact_from_field_missing(self):
+        contacts = self.make_client()
+        self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        })
+
+        self.assert_http_error(
+            400, contacts.get_contact, msisdn='+12345')
 
     def test_update_contact(self):
         contacts = self.make_client()
