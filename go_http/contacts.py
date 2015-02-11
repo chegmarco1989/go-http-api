@@ -102,9 +102,9 @@ class ContactsApiClient(object):
         Get a contact given a field and a value for that field.
 
         :param str field:
-            Field that is searched on (eg. ``MSISDN``)
+            Field that is searched on (e.g. ``msisdn``, ``twitter_handle``)
         :param str value:
-            Value that the field must match (eg. ``+12345``)
+            Value that the field must match (e.g. ``+12345``, ``@foobar``)
         """
         contact = self._api_request(
             "GET", "contacts", "", params={'query': '%s=%s' % (field, value)})
