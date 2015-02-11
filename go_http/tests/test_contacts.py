@@ -263,7 +263,7 @@ class TestContactsApiClient(TestCase):
             u"surname": u"of Camelot",
         })
 
-        contact = contacts.get_contact_from_field('msisdn', '+15556483')
+        contact = contacts.get_contact(msisdn='+15556483')
         self.assertEqual(contact, existing_contact)
 
     def test_get_contact_from_field_missing(self):
@@ -275,7 +275,7 @@ class TestContactsApiClient(TestCase):
         })
 
         self.assert_http_error(
-            400, contacts.get_contact_from_field, 'msisdn', '+12345')
+            400, contacts.get_contact, msisdn='+12345')
 
     def test_update_contact(self):
         contacts = self.make_client()
