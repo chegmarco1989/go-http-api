@@ -88,27 +88,42 @@ class ContactsApiClient(object):
         """
         return self._api_request("POST", "contacts", "", contact_data)
 
-    def get_contact(self, contact_key):
-        """
-        Get a contact.
-
-        :param str contact_key:
-            Key for the contact to get.
-        """
+    def _contact_by_key(self, contact_key):
         return self._api_request("GET", "contacts", contact_key)
 
-    def get_contact_from_field(self, field, value):
-        """
-        Get a contact given a field and a value for that field.
-
-        :param str field:
-            Field that is searched on (e.g. ``msisdn``, ``twitter_handle``)
-        :param str value:
-            Value that the field must match (e.g. ``+12345``, ``@foobar``)
-        """
+    def _contact_by_field(self, field, value):
         contact = self._api_request(
             "GET", "contacts", "", params={'query': '%s=%s' % (field, value)})
         return contact.get('data')[0]
+
+    def get_contact(self, *args, **kw):
+        """
+        Get a contact. May either be called as ``.get_contact(contact_key)``
+        to get a contact from its key, or ``.get_contact(field=value)``, to
+        get the contact from an address field ``field`` having a value
+        ``value``.
+
+        Contact key example:
+            contact = api.get_contact('abcdef123456')
+
+        Field/value example:
+            contact = api.get_contact(msisdn='+12345')
+
+        :param str contact_key:
+            Key for the contact to get.
+        :param str field:
+            ``field`` is the address field that is searched on (e.g. ``msisdn``
+            , ``twitter_handle``). The value of ``field`` is the value to
+            search for (e.g. ``+12345``, `@foobar``).
+        """
+        if not kw and len(args) == 1:
+            return self._contact_by_key(args[0])
+        elif len(kw) == 1 and not args:
+            field, value = kw.items()[0]
+            return self._contact_by_field(field, value)
+        raise ValueError(
+            "get_contact may either be called as .get_contact(contact_key) or"
+            " .get_contact(field=value)")
 
     def update_contact(self, contact_key, update_data):
         """
