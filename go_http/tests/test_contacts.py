@@ -46,11 +46,14 @@ class TestContactsApiClient(TestCase):
     API_URL = "http://example.com/go"
     AUTH_TOKEN = "auth_token"
 
+    MAX_CONTACTS_PER_PAGE = 10
+
     def setUp(self):
         self.contacts_data = {}
         self.groups_data = {}
         self.contacts_backend = FakeContactsApi(
-            "go/", self.AUTH_TOKEN, self.contacts_data, self.groups_data)
+            "go/", self.AUTH_TOKEN, self.contacts_data, self.groups_data,
+            contacts_limit=self.MAX_CONTACTS_PER_PAGE)
         self.session = TestSession()
         adapter = FakeContactsApiAdapter(self.contacts_backend)
         self.session.mount(self.API_URL, adapter)
@@ -123,6 +126,59 @@ class TestContactsApiClient(TestCase):
     def test_auth_failure(self):
         contacts = self.make_client(auth_token="bogus_token")
         self.assert_http_error(403, contacts.get_contact, "foo")
+
+    def test_contacts_single_page(self):
+        expected_contact = self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        })
+        contacts_api = self.make_client()
+        [contact] = list(contacts_api.contacts())
+        self.assertEqual(contact, expected_contact)
+
+    def test_contacts_no_results(self):
+        contacts_api = self.make_client()
+        contacts = list(contacts_api.contacts())
+        self.assertEqual(contacts, [])
+
+    def test_contacts_multiple_pages(self):
+        expected_contacts = []
+        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
+            expected_contacts.append(self.make_existing_contact({
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+            }))
+        contacts_api = self.make_client()
+        contacts = list(contacts_api.contacts())
+
+        contacts.sort(key=lambda d: d['msisdn'])
+        expected_contacts.sort(key=lambda d: d['msisdn'])
+
+        self.assertEqual(contacts, expected_contacts)
+
+    def test_contacts_multiple_pages_with_cursor(self):
+        expected_contacts = []
+        for i in range(self.MAX_CONTACTS_PER_PAGE):
+            expected_contacts.append(self.make_existing_contact({
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+            }))
+        expected_contacts.append(self.make_existing_contact({
+            u"msisdn": u"+15556",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        }))
+        contacts_api = self.make_client()
+        first_page = contacts_api._api_request("GET", "contacts", "")
+        cursor = first_page['cursor']
+        contacts = list(contacts_api.contacts(start_cursor=cursor))
+        contacts.extend(first_page['data'])
+        contacts.sort(key=lambda d: d['msisdn'])
+        expected_contacts.sort(key=lambda d: d['msisdn'])
+        self.assertEqual(contacts, expected_contacts)
 
     def test_create_contact(self):
         contacts = self.make_client()
@@ -198,6 +254,28 @@ class TestContactsApiClient(TestCase):
     def test_get_missing_contact(self):
         contacts = self.make_client()
         self.assert_http_error(404, contacts.get_contact, "foo")
+
+    def test_get_contact_from_field(self):
+        contacts = self.make_client()
+        existing_contact = self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        })
+
+        contact = contacts.get_contact(msisdn='+15556483')
+        self.assertEqual(contact, existing_contact)
+
+    def test_get_contact_from_field_missing(self):
+        contacts = self.make_client()
+        self.make_existing_contact({
+            u"msisdn": u"+15556483",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+        })
+
+        self.assert_http_error(
+            400, contacts.get_contact, msisdn='+12345')
 
     def test_update_contact(self):
         contacts = self.make_client()

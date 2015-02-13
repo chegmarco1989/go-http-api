@@ -6,6 +6,9 @@ import logging
 import uuid
 
 import requests
+from requests.exceptions import HTTPError
+
+from go_http.exceptions import UserOptedOutException
 
 
 class HttpApiSender(object):
@@ -66,7 +69,17 @@ class HttpApiSender(object):
             "content": content,
             "to_addr": to_addr,
         }
-        return self._api_request('messages.json', data)
+        try:
+            return self._api_request('messages.json', data)
+        except HTTPError as e:
+            response = e.response.json()
+            if (
+                    e.response.status_code != 400 or
+                    'opted out' not in response.get('reason', '') or
+                    response.get('success')):
+                raise e
+            raise UserOptedOutException(
+                to_addr, content, response.get('reason'))
 
     def fire_metric(self, metric, value, agg="last"):
         """ Fire a value for a metric.
