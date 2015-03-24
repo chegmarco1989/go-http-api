@@ -43,7 +43,6 @@ class ContactsApiClient(object):
     def _api_request(
             self, method, api_collection, api_path, data=None, params=None):
         url = "%s/%s/%s" % (self.api_url, api_collection, api_path)
-        print url
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": "Bearer %s" % (self.auth_token,),
