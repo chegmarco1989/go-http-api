@@ -14,6 +14,7 @@ from go_http.contacts import ContactsApiClient
 
 
 class FakeContactsApiAdapter(HTTPAdapter):
+
     """
     Adapter for FakeContactsApi.
 
@@ -445,3 +446,53 @@ class TestContactsApiClient(TestCase):
     def test_delete_missing_group(self):
         client = self.make_client()
         self.assert_http_error(404, client.delete_group, 'foo')
+
+    def test_group_contacts_multiple_pages_with_cursor(self):
+        client = self.make_client()
+        group_data = {
+            u'name': u'key',
+        }
+        client.create_group(group_data)
+        expected_contacts = []
+        for i in range(self.MAX_CONTACTS_PER_PAGE):
+            expected_contacts.append(self.make_existing_contact({
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+                u"groups": u"[key]",
+            }))
+        expected_contacts.append(self.make_existing_contact({
+            u"msisdn": u"+15556",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+            u"groups": u"[key]",
+        }))
+        first_page = client._api_request("GET", "groups/key", "contacts")
+        cursor = first_page['cursor']
+        contacts = list(client.group_contacts(group_key="key",
+                                              start_cursor=cursor))
+        contacts.extend(first_page['data'])
+        contacts.sort(key=lambda d: d['msisdn'])
+        expected_contacts.sort(key=lambda d: d['msisdn'])
+        self.assertEqual(contacts, expected_contacts)
+
+    def test_group_contacts_multiple_pages(self):
+        expected_contacts = []
+        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
+            expected_contacts.append(self.make_existing_contact({
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+                u"groups": u"[key]",
+            }))
+        client = self.make_client()
+        group_data = {
+            u'name': u'key',
+        }
+        client.create_group(group_data)
+        contacts = list(client.group_contacts("key"))
+
+        contacts.sort(key=lambda d: d['msisdn'])
+        expected_contacts.sort(key=lambda d: d['msisdn'])
+
+        self.assertEqual(contacts, expected_contacts)
