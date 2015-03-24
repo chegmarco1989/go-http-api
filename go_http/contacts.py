@@ -197,7 +197,7 @@ class ContactsApiClient(object):
             the contacts from.
 
         :returns:
-            An iterator over all contacts for delete_group.
+            An iterator over all group contacts.
         """
         if start_cursor:
             page = self._api_request(
