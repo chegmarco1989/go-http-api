@@ -483,7 +483,7 @@ class TestContactsApiClient(TestCase):
                 u"msisdn": u"+155564%d" % (i,),
                 u"name": u"Arthur",
                 u"surname": u"of Camelot",
-                u"groups": u"[key]",
+                u"groups": ["key"],
             }))
         client = self.make_client()
         group_data = {
@@ -496,3 +496,26 @@ class TestContactsApiClient(TestCase):
         expected_contacts.sort(key=lambda d: d['msisdn'])
 
         self.assertEqual(contacts, expected_contacts)
+
+    def test_group_contacts_none_found(self):
+        expected_contacts = []
+        other_group_contacts = []
+        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
+            other_group_contacts.append(self.make_existing_contact({
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+                u"groups": ["diffkey"],
+            }))
+        client = self.make_client()
+        group_data = {
+            u'name': u'key',
+        }
+        client.create_group(group_data)
+        contacts = list(client.group_contacts("key"))
+
+        contacts.sort(key=lambda d: d['msisdn'])
+        expected_contacts.sort(key=lambda d: d['msisdn'])
+
+        self.assertEqual(contacts, expected_contacts)
+
