@@ -12,6 +12,7 @@ import requests
 
 
 class ContactsApiClient(object):
+
     """
     Client for Vumi Go's contacts API.
 
@@ -182,3 +183,34 @@ class ContactsApiClient(object):
             Key for the group to delete.
         """
         return self._api_request("DELETE", "groups", group_key)
+
+    def group_contacts(self, group_key, start_cursor=None):
+        """
+        Retrieve all group contacts.
+
+        This uses the API's paginated contact download.
+
+        :param str group_key
+            Key for the group to query.
+        :param start_cursor:
+            An optional parameter that declares the cursor to start fetching
+            the contacts from.
+
+        :returns:
+            An iterator over all group contacts.
+        """
+        if start_cursor:
+            page = self._api_request(
+                "GET", "groups/%s" % group_key,
+                "contacts?cursor=%s" % start_cursor)
+        else:
+            page = self._api_request(
+                "GET", "groups/%s" % group_key, "contacts")
+        while True:
+            for contact in page['data']:
+                yield contact
+            if page['cursor'] is None:
+                break
+            page = self._api_request(
+                "GET", "groups/%s" % group_key, "contacts?cursor=%s" %
+                page['cursor'])
