@@ -481,6 +481,9 @@ class TestContactsApiClient(TestCase):
         self.make_existing_group({
             u'name': 'key',
         })
+        self.make_existing_group({
+            u'name': 'diffkey',
+        })
         for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
             expected_contacts.append(self.make_existing_contact({
                 u"msisdn": u"+155564%d" % (i,),
@@ -488,6 +491,12 @@ class TestContactsApiClient(TestCase):
                 u"surname": u"of Camelot",
                 u"groups": ["key"],
             }))
+        self.make_existing_contact({
+                u"msisdn": u"+1234567",
+                u"name": u"Nancy",
+                u"surname": u"of Camelot",
+                u"groups": ["diffkey"],
+            })
         client = self.make_client()
         contacts = list(client.group_contacts("key"))
 
