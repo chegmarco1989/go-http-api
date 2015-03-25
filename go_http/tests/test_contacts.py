@@ -449,10 +449,9 @@ class TestContactsApiClient(TestCase):
 
     def test_group_contacts_multiple_pages_with_cursor(self):
         client = self.make_client()
-        group_data = {
-            u'name': u'key',
-        }
-        client.create_group(group_data)
+        self.make_existing_group({
+            u'name': 'key',
+        })
         expected_contacts = []
         for i in range(self.MAX_CONTACTS_PER_PAGE):
             expected_contacts.append(self.make_existing_contact({
