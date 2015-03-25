@@ -459,13 +459,13 @@ class TestContactsApiClient(TestCase):
                 u"msisdn": u"+155564%d" % (i,),
                 u"name": u"Arthur",
                 u"surname": u"of Camelot",
-                u"groups": u"[key]",
+                u"groups": ["key"],
             }))
         expected_contacts.append(self.make_existing_contact({
             u"msisdn": u"+15556",
             u"name": u"Arthur",
             u"surname": u"of Camelot",
-            u"groups": u"[key]",
+            u"groups": ["key"],
         }))
         first_page = client._api_request("GET", "groups/key", "contacts")
         cursor = first_page['cursor']
@@ -478,6 +478,9 @@ class TestContactsApiClient(TestCase):
 
     def test_group_contacts_multiple_pages(self):
         expected_contacts = []
+        self.make_existing_group({
+            u'name': 'key',
+        })
         for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
             expected_contacts.append(self.make_existing_contact({
                 u"msisdn": u"+155564%d" % (i,),
@@ -486,10 +489,6 @@ class TestContactsApiClient(TestCase):
                 u"groups": ["key"],
             }))
         client = self.make_client()
-        group_data = {
-            u'name': u'key',
-        }
-        client.create_group(group_data)
         contacts = list(client.group_contacts("key"))
 
         contacts.sort(key=lambda d: d['msisdn'])
@@ -500,6 +499,12 @@ class TestContactsApiClient(TestCase):
     def test_group_contacts_none_found(self):
         expected_contacts = []
         other_group_contacts = []
+        self.make_existing_group({
+            u'name': 'key',
+        })
+        self.make_existing_group({
+            u'name': 'diffkey',
+        })
         for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
             other_group_contacts.append(self.make_existing_contact({
                 u"msisdn": u"+155564%d" % (i,),
@@ -508,10 +513,6 @@ class TestContactsApiClient(TestCase):
                 u"groups": ["diffkey"],
             }))
         client = self.make_client()
-        group_data = {
-            u'name': u'key',
-        }
-        client.create_group(group_data)
         contacts = list(client.group_contacts("key"))
 
         contacts.sort(key=lambda d: d['msisdn'])
