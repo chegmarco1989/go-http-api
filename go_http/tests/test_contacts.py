@@ -518,4 +518,3 @@ class TestContactsApiClient(TestCase):
         expected_contacts.sort(key=lambda d: d['msisdn'])
 
         self.assertEqual(contacts, expected_contacts)
-
