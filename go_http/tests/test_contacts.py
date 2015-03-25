@@ -492,11 +492,11 @@ class TestContactsApiClient(TestCase):
                 u"groups": ["key"],
             }))
         self.make_existing_contact({
-                u"msisdn": u"+1234567",
-                u"name": u"Nancy",
-                u"surname": u"of Camelot",
-                u"groups": ["diffkey"],
-            })
+            u"msisdn": u"+1234567",
+            u"name": u"Nancy",
+            u"surname": u"of Camelot",
+            u"groups": ["diffkey"],
+        })
         client = self.make_client()
         contacts = list(client.group_contacts("key"))
 
