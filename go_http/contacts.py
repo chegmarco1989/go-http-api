@@ -10,6 +10,8 @@ import json
 
 import requests
 
+from go_http.exceptions import PagedException
+
 
 class ContactsApiClient(object):
 
@@ -77,8 +79,11 @@ class ContactsApiClient(object):
                 yield contact
             if page['cursor'] is None:
                 break
-            page = self._api_request(
-                "GET", "contacts", "?cursor=%s" % page['cursor'])
+            try:
+                page = self._api_request(
+                    "GET", "contacts", "?cursor=%s" % page['cursor'])
+            except Exception as err:
+                raise PagedException(page['cursor'], err)
 
     def create_contact(self, contact_data):
         """
@@ -211,6 +216,9 @@ class ContactsApiClient(object):
                 yield contact
             if page['cursor'] is None:
                 break
-            page = self._api_request(
-                "GET", "groups/%s" % group_key, "contacts?cursor=%s" %
-                page['cursor'])
+            try:
+                page = self._api_request(
+                    "GET", "groups/%s" % group_key, "contacts?cursor=%s" %
+                    page['cursor'])
+            except Exception as err:
+                raise PagedException(page['cursor'], err)
