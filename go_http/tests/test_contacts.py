@@ -80,6 +80,19 @@ class TestContactsApiClient(TestCase):
         self.groups_data[existing_group[u'key']] = existing_group
         return existing_group
 
+    def make_n_contacts(self, n, groups=None):
+        contacts = []
+        for i in range(n):
+            data = {
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+            }
+            if groups is not None:
+                data["groups"] = groups
+            contacts.append(self.make_existing_contact(data))
+        return contacts
+
     def assert_contacts_equal(self, contacts_a, contacts_b):
         contacts_a.sort(key=lambda d: d['msisdn'])
         contacts_b.sort(key=lambda d: d['msisdn'])
@@ -150,11 +163,7 @@ class TestContactsApiClient(TestCase):
         self.assert_http_error(403, contacts.get_contact, "foo")
 
     def test_contacts_single_page(self):
-        expected_contact = self.make_existing_contact({
-            u"msisdn": u"+15556483",
-            u"name": u"Arthur",
-            u"surname": u"of Camelot",
-        })
+        [expected_contact] = self.make_n_contacts(1)
         contacts_api = self.make_client()
         [contact] = list(contacts_api.contacts())
         self.assertEqual(contact, expected_contact)
@@ -165,30 +174,15 @@ class TestContactsApiClient(TestCase):
         self.assertEqual(contacts, [])
 
     def test_contacts_multiple_pages(self):
-        expected_contacts = []
-        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
-            expected_contacts.append(self.make_existing_contact({
-                u"msisdn": u"+155564%d" % (i,),
-                u"name": u"Arthur",
-                u"surname": u"of Camelot",
-            }))
+        expected_contacts = self.make_n_contacts(
+            self.MAX_CONTACTS_PER_PAGE + 1)
         contacts_api = self.make_client()
         contacts = list(contacts_api.contacts())
         self.assert_contacts_equal(contacts, expected_contacts)
 
     def test_contacts_multiple_pages_with_cursor(self):
-        expected_contacts = []
-        for i in range(self.MAX_CONTACTS_PER_PAGE):
-            expected_contacts.append(self.make_existing_contact({
-                u"msisdn": u"+155564%d" % (i,),
-                u"name": u"Arthur",
-                u"surname": u"of Camelot",
-            }))
-        expected_contacts.append(self.make_existing_contact({
-            u"msisdn": u"+15556",
-            u"name": u"Arthur",
-            u"surname": u"of Camelot",
-        }))
+        expected_contacts = self.make_n_contacts(
+            self.MAX_CONTACTS_PER_PAGE + 1)
         contacts_api = self.make_client()
         first_page = contacts_api._api_request("GET", "contacts", "")
         cursor = first_page['cursor']
@@ -197,13 +191,8 @@ class TestContactsApiClient(TestCase):
         self.assert_contacts_equal(contacts, expected_contacts)
 
     def test_contacts_multiple_pages_with_failure(self):
-        expected_contacts = []
-        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
-            expected_contacts.append(self.make_existing_contact({
-                u"msisdn": u"+155564%d" % (i,),
-                u"name": u"Arthur",
-                u"surname": u"of Camelot",
-            }))
+        expected_contacts = self.make_n_contacts(
+            self.MAX_CONTACTS_PER_PAGE + 1)
 
         contacts_api = self.make_client()
         it = contacts_api.contacts()
@@ -484,24 +473,13 @@ class TestContactsApiClient(TestCase):
         self.assert_http_error(404, client.delete_group, 'foo')
 
     def test_group_contacts_multiple_pages_with_cursor(self):
-        client = self.make_client()
         self.make_existing_group({
             u'name': 'key',
         })
-        expected_contacts = []
-        for i in range(self.MAX_CONTACTS_PER_PAGE):
-            expected_contacts.append(self.make_existing_contact({
-                u"msisdn": u"+155564%d" % (i,),
-                u"name": u"Arthur",
-                u"surname": u"of Camelot",
-                u"groups": ["key"],
-            }))
-        expected_contacts.append(self.make_existing_contact({
-            u"msisdn": u"+15556",
-            u"name": u"Arthur",
-            u"surname": u"of Camelot",
-            u"groups": ["key"],
-        }))
+        expected_contacts = self.make_n_contacts(
+            self.MAX_CONTACTS_PER_PAGE + 1, groups=["key"])
+
+        client = self.make_client()
         first_page = client._api_request("GET", "groups/key", "contacts")
         cursor = first_page['cursor']
         contacts = list(client.group_contacts(group_key="key",
@@ -512,49 +490,34 @@ class TestContactsApiClient(TestCase):
         self.assertEqual(contacts, expected_contacts)
 
     def test_group_contacts_multiple_pages(self):
-        expected_contacts = []
         self.make_existing_group({
             u'name': 'key',
         })
         self.make_existing_group({
             u'name': 'diffkey',
         })
-        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
-            expected_contacts.append(self.make_existing_contact({
-                u"msisdn": u"+155564%d" % (i,),
-                u"name": u"Arthur",
-                u"surname": u"of Camelot",
-                u"groups": ["key"],
-            }))
+        expected_contacts = self.make_n_contacts(
+            self.MAX_CONTACTS_PER_PAGE + 1, groups=["key"])
         self.make_existing_contact({
             u"msisdn": u"+1234567",
             u"name": u"Nancy",
             u"surname": u"of Camelot",
             u"groups": ["diffkey"],
         })
+
         client = self.make_client()
         contacts = list(client.group_contacts("key"))
-
-        contacts.sort(key=lambda d: d['msisdn'])
-        expected_contacts.sort(key=lambda d: d['msisdn'])
-
-        self.assertEqual(contacts, expected_contacts)
+        self.assert_contacts_equal(contacts, expected_contacts)
 
     def test_group_contacts_multiple_pages_with_failure(self):
-        expected_contacts = []
         self.make_existing_group({
             u'name': 'key',
         })
         self.make_existing_group({
             u'name': 'diffkey',
         })
-        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
-            expected_contacts.append(self.make_existing_contact({
-                u"msisdn": u"+155564%d" % (i,),
-                u"name": u"Arthur",
-                u"surname": u"of Camelot",
-                u"groups": ["key"],
-            }))
+        expected_contacts = self.make_n_contacts(
+            self.MAX_CONTACTS_PER_PAGE + 1, groups=["key"])
         self.make_existing_contact({
             u"msisdn": u"+1234567",
             u"name": u"Nancy",
@@ -576,25 +539,15 @@ class TestContactsApiClient(TestCase):
             contacts + [last_contact], expected_contacts)
 
     def test_group_contacts_none_found(self):
-        expected_contacts = []
-        other_group_contacts = []
         self.make_existing_group({
             u'name': 'key',
         })
         self.make_existing_group({
             u'name': 'diffkey',
         })
-        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
-            other_group_contacts.append(self.make_existing_contact({
-                u"msisdn": u"+155564%d" % (i,),
-                u"name": u"Arthur",
-                u"surname": u"of Camelot",
-                u"groups": ["diffkey"],
-            }))
+        self.make_n_contacts(
+            self.MAX_CONTACTS_PER_PAGE + 1, groups=["diffkey"])
+
         client = self.make_client()
         contacts = list(client.group_contacts("key"))
-
-        contacts.sort(key=lambda d: d['msisdn'])
-        expected_contacts.sort(key=lambda d: d['msisdn'])
-
-        self.assertEqual(contacts, expected_contacts)
+        self.assert_contacts_equal(contacts, [])
