@@ -147,6 +147,9 @@ class HttpApiSender(object):
         :param str agg:
             Aggregation type. Defaults to ``'last'``. Other allowed values are
             ``'sum'``, ``'avg'``, ``'max'`` and ``'min'``.
+
+        Note that metrics can also be fired via the metrics API.
+        See :meth:`go_http.metrics.MetricsApiClient.fire`.
         """
         data = [
             [
