@@ -22,11 +22,11 @@ class RecordingAdapter(TestAdapter):
         return super(RecordingAdapter, self).send(request, *args, **kw)
 
 
-class TestMetricApiReader(TestCase):
+class TestMetricApiClient(TestCase):
 
     def setUp(self):
         self.session = TestSession()
-        self.sender = MetricsApiClient(
+        self.client = MetricsApiClient(
             auth_token="auth-token",
             api_url="http://example.com/api/v1/go",
             session=self.session)
@@ -43,13 +43,17 @@ class TestMetricApiReader(TestCase):
         self.assertEqual(client.api_url,
                          "http://go.vumi.org/api/v1/go")
 
-    def check_request(self, request, method, headers=None):
+    def check_request(self, request, method, data=None, headers=None):
         self.assertEqual(request.method, method)
         if headers is not None:
             for key, value in headers.items():
                 self.assertEqual(request.headers[key], value)
+        if data is None:
+            self.assertEqual(request.body, None)
+        else:
+            self.assertEqual(json.loads(request.body), data)
 
-    def test_send_request(self):
+    def test_get_metric(self):
         response = {u'stores.store_name.metric_name.agg':
                     [{u'x': 1413936000000,
                         u'y': 88916.0},
@@ -67,9 +71,29 @@ class TestMetricApiReader(TestCase):
             "metrics/?m=stores.store_name.metric_name.agg"
             "&interval=1d&from=-30d&nulls=omit", adapter)
 
-        result = self.sender.get_metric(
+        result = self.client.get_metric(
             "stores.store_name.metric_name.agg", "-30d", "1d", "omit")
         self.assertEqual(result, response)
         self.check_request(
             adapter.request, 'GET',
+            headers={"Authorization": u'Bearer auth-token'})
+
+    def test_fire(self):
+        response = [{
+            'name': 'foo.last',
+            'value': 3.1415,
+            'aggregator': 'last',
+        }]
+        adapter = RecordingAdapter(json.dumps(response))
+        self.session.mount(
+            "http://example.com/api/v1/go/"
+            "metrics/", adapter)
+
+        result = self.client.fire(**{
+            "foo.last": 3.1415,
+        })
+        self.assertEqual(result, response)
+        self.check_request(
+            adapter.request, 'POST',
+            data={"foo.last": 3.1415},
             headers={"Authorization": u'Bearer auth-token'})
