@@ -57,18 +57,7 @@ class HttpApiSender(object):
         r.raise_for_status()
         return r.json()
 
-    def send_text(self, to_addr, content):
-        """ Send a message to an address.
-
-        :param str to_addr:
-            Address to send to.
-        :param str content:
-            Text to send.
-        """
-        data = {
-            "content": content,
-            "to_addr": to_addr,
-        }
+    def _raw_send(self, data):
         try:
             return self._api_request('messages.json', data)
         except HTTPError as e:
@@ -79,7 +68,73 @@ class HttpApiSender(object):
                     response.get('success')):
                 raise e
             raise UserOptedOutException(
-                to_addr, content, response.get('reason'))
+                data.get("to_addr"), data.get("content"),
+                response.get('reason'))
+
+    def send_text(self, to_addr, content, session_event=None):
+        """ Send a text message to an address.
+
+        :param str to_addr:
+            Address to send to.
+        :param str content:
+            Text to send.
+        :param str session_event:
+            The session event for session-based messaging channels (e.g. USSD).
+            May be one of 'new', 'resume' or 'close'. Optional.
+        """
+        data = {
+            "to_addr": to_addr,
+            "content": content,
+        }
+        if session_event is not None:
+            data["session_event"] = session_event
+        return self._raw_send(data)
+
+    def send_voice(self, to_addr, content, speech_url=None, wait_for=None,
+                   session_event=None):
+        """ Send a voice message to an address.
+
+        :param str to_addr:
+            Address to send to.
+        :param str content:
+            Text to send. If ``speech_url`` is not provided, a text-to-speech
+            engine is used to generate a voice message from this text. If
+            ``speech_url`` is provided, this text is ignored by voice
+            messaging channels, but may still be used by non-voice channels
+            that process the message.
+        :param str speech_url:
+            A URL to a voice file containing the voice message to sent.
+            If not given, a voice message is generated from ``content`` using
+            a text-to-speech engine. Optional.
+        :param str wait_for:
+            By default the Vumi voice connections send a response to a
+            message as soon as a key is pressed by the person the call is with.
+            The ``wait_for`` option allows specifying a character to wait for
+            before a response is returned. For example, without ``wait_for``
+            pressing '123#' on the phone would result in four response messages
+            containing '1', '2', '3' and '#' respectively. If
+            ``wait_for='#'`` was set, pressing '123#' would result in a
+            single response message containing '123'. Optional.
+        :param str session_event:
+            The session event. May be one of 'new', 'resume' or 'close'.
+            'new' initiates a new call. 'resume' continues an existing call.
+            'close' ends an existing call. The default of ``None`` is
+            equivalent to 'resume'.
+        """
+        data = {
+            "to_addr": to_addr,
+            "content": content,
+        }
+        if session_event is not None:
+            data["session_event"] = session_event
+        voice = {}
+        if speech_url is not None:
+            voice["speech_url"] = speech_url
+        if wait_for is not None:
+            voice["wait_for"] = wait_for
+        if voice:
+            data["helper_metadata"] = {"voice": voice}
+        return self._raw_send(data)
 
     def fire_metric(self, metric, value, agg="last"):
         """ Fire a value for a metric.

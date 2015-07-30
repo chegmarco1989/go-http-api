@@ -52,22 +52,36 @@ class TestHttpApiSender(TestCase):
             for key, value in headers.items():
                 self.assertEqual(request.headers[key], value)
 
-    def test_send_text(self):
+    def check_successful_send(self, send, expected_data):
         adapter = RecordingAdapter(json.dumps({"message_id": "id-1"}))
         self.session.mount(
             "http://example.com/api/v1/go/http_api_nostream/conv-key/"
             "messages.json", adapter)
-
-        result = self.sender.send_text("to-addr-1", "Hello!")
+        result = send()
         self.assertEqual(result, {
             "message_id": "id-1",
         })
         self.check_request(
-            adapter.request, 'PUT',
-            data={"content": "Hello!", "to_addr": "to-addr-1"},
+            adapter.request, 'PUT', data=expected_data,
             headers={"Authorization": u'Basic YWNjLWtleTpjb252LXRva2Vu'})
 
-    def test_send_to_opted_out(self):
+    def test_send_text(self):
+        self.check_successful_send(
+            lambda: self.sender.send_text("to-addr-1", "Hello!"),
+            {
+                "content": "Hello!", "to_addr": "to-addr-1",
+            })
+
+    def test_send_text_with_session_event(self):
+        self.check_successful_send(
+            lambda: self.sender.send_text(
+                "to-addr-1", "Hello!", session_event="close"),
+            {
+                "content": "Hello!", "to_addr": "to-addr-1",
+                "session_event": "close",
+            })
+
+    def test_send_text_to_opted_out(self):
         """
         UserOptedOutException raised for sending messages to opted out
         recipients
@@ -88,7 +102,7 @@ class TestHttpApiSender(TestCase):
             self.assertEqual(
                 e.reason, 'Recipient with msisdn to-addr-1 has opted out')
 
-    def test_send_to_other_http_error(self):
+    def test_send_text_to_other_http_error(self):
         """
         HTTP errors should not be raised as UserOptedOutExceptions if they are
         not user opted out errors.
@@ -108,6 +122,45 @@ class TestHttpApiSender(TestCase):
             response = e.response.json()
             self.assertFalse(response['success'])
             self.assertEqual(response['reason'], "No unicorns were found")
+
+    def test_send_voice(self):
+        self.check_successful_send(
+            lambda: self.sender.send_voice("to-addr-1", "Hello!"),
+            {
+                "content": "Hello!", "to_addr": "to-addr-1",
+            })
+
+    def test_send_voice_with_session_event(self):
+        self.check_successful_send(
+            lambda: self.sender.send_voice(
+                "to-addr-1", "Hello!", session_event="close"),
+            {
+                "content": "Hello!", "to_addr": "to-addr-1",
+                "session_event": "close",
+            })
+
+    def test_send_voice_with_speech_url(self):
+        self.check_successful_send(
+            lambda: self.sender.send_voice(
+                "to-addr-1", "Hello!",
+                speech_url="http://example.com/voice.ogg"),
+            {
+                "content": "Hello!", "to_addr": "to-addr-1",
+                "helper_metadata": {
+                    "voice": {"speech_url": "http://example.com/voice.ogg"},
+                },
+            })
+
+    def test_send_voice_with_wait_for(self):
+        self.check_successful_send(
+            lambda: self.sender.send_voice(
+                "to-addr-1", "Hello!", wait_for="#"),
+            {
+                "content": "Hello!", "to_addr": "to-addr-1",
+                "helper_metadata": {
+                    "voice": {"wait_for": "#"},
+                },
+            })
 
     def test_fire_metric(self):
         adapter = RecordingAdapter(
