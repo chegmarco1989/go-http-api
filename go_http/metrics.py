@@ -22,7 +22,7 @@ class MetricsApiClient(object):
 
     :param str api_url:
         The full URL of the HTTP API. Defaults to
-        ``http://go.vumi.org/api/v1/go``.
+        ``https://go.vumi.org/api/v1/go``.
 
     :type session:
         :class:`requests.Session`
@@ -33,7 +33,7 @@ class MetricsApiClient(object):
     def __init__(self, auth_token, api_url=None, session=None):
         self.auth_token = auth_token
         if api_url is None:
-            api_url = "http://go.vumi.org/api/v1/go"
+            api_url = "https://go.vumi.org/api/v1/go"
         self.api_url = api_url.rstrip('/')
         if session is None:
             session = requests.Session()
@@ -74,3 +74,39 @@ class MetricsApiClient(object):
             "nulls": nulls
         }
         return self._api_request("GET", "metrics/", payload)
+
+    def fire(self, metrics):
+        """
+        Fire metrics.
+
+        :param dict metrics:
+            A mapping of metric names to floating point metric values.
+
+        When metrics are fired they must specify an aggregator. The
+        aggregation method is determined by the suffix of the metric name.
+        For example, ``foo.last`` fires a metric that uses the ``last``
+        aggregation method.
+
+        If a metric name does not end in a valid aggregator name, firing
+        the set of metrics will fail.
+
+        The available aggregators are:
+
+        :Average:
+            ``avg``. Aggregates by averaging the values in each time period.
+        :Sum:
+            ``sum``. Aggregates by summing all the values in each time period.
+        :Maximum:
+            ``max``. Aggregates by choosing the maximum value in each time
+            period.
+        :Minimum:
+            ``min``. Aggregates by choosing the minimum value in each time
+            period.
+        :Last:
+            ``last``. Aggregates by choosing the last value in each time
+            period.
+
+        Note that metrics can also be fired via an HTTP conversation API.
+        See :meth:`go_http.send.HttpApiSender.fire_metric`.
+        """
+        return self._api_request("POST", "metrics/", metrics)

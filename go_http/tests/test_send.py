@@ -42,7 +42,7 @@ class TestHttpApiSender(TestCase):
             account_key="acc-key", conversation_key="conv-key",
             conversation_token="conv-token")
         self.assertEqual(sender.api_url,
-                         "http://go.vumi.org/api/v1/go/http_api_nostream")
+                         "https://go.vumi.org/api/v1/go/http_api_nostream")
 
     def check_request(self, request, method, data=None, headers=None):
         self.assertEqual(request.method, method)
@@ -228,6 +228,75 @@ class TestLoggingSender(TestCase):
             "content": "Hello!",
         })
         self.check_logs("Message: 'Hello!' sent to 'to-addr-1'")
+
+    def test_send_text_with_session_event(self):
+        result = self.sender.send_text(
+            "to-addr-1", "Hello!", session_event='close')
+        self.assertEqual(result, {
+            "message_id": result["message_id"],
+            "to_addr": "to-addr-1",
+            "content": "Hello!",
+            "session_event": "close",
+        })
+        self.check_logs(
+            "Message: 'Hello!' sent to 'to-addr-1'"
+            " [session_event: close]")
+
+    def test_send_voice(self):
+        result = self.sender.send_voice("to-addr-1", "Hello!")
+        self.assertEqual(result, {
+            "message_id": result["message_id"],
+            "to_addr": "to-addr-1",
+            "content": "Hello!",
+        })
+        self.check_logs("Message: 'Hello!' sent to 'to-addr-1'")
+
+    def test_send_voice_with_session_event(self):
+        result = self.sender.send_voice(
+            "to-addr-1", "Hello!", session_event='close')
+        self.assertEqual(result, {
+            "message_id": result["message_id"],
+            "to_addr": "to-addr-1",
+            "content": "Hello!",
+            "session_event": "close",
+        })
+        self.check_logs(
+            "Message: 'Hello!' sent to 'to-addr-1'"
+            " [session_event: close]")
+
+    def test_send_voice_with_speech_url(self):
+        result = self.sender.send_voice(
+            "to-addr-1", "Hello!", speech_url='http://example.com/voice.ogg')
+        self.assertEqual(result, {
+            "message_id": result["message_id"],
+            "to_addr": "to-addr-1",
+            "content": "Hello!",
+            "helper_metadata": {
+                "voice": {
+                    "speech_url": "http://example.com/voice.ogg",
+                },
+            }
+        })
+        self.check_logs(
+            "Message: 'Hello!' sent to 'to-addr-1'"
+            " [voice: {'speech_url': 'http://example.com/voice.ogg'}]")
+
+    def test_send_voice_with_wait_for(self):
+        result = self.sender.send_voice(
+            "to-addr-1", "Hello!", wait_for="#")
+        self.assertEqual(result, {
+            "message_id": result["message_id"],
+            "to_addr": "to-addr-1",
+            "content": "Hello!",
+            "helper_metadata": {
+                "voice": {
+                    "wait_for": "#",
+                },
+            }
+        })
+        self.check_logs(
+            "Message: 'Hello!' sent to 'to-addr-1'"
+            " [voice: {'wait_for': '#'}]")
 
     def test_fire_metric(self):
         result = self.sender.fire_metric("metric-1", 5.1, agg="max")
