@@ -87,6 +87,9 @@ class MetricsApiClient(object):
         For example, ``foo.last`` fires a metric that uses the ``last``
         aggregation method.
 
+        If a metric name does not end in a valid aggregator name, firing
+        the set of metrics will fail.
+
         The available aggregators are:
 
         :Average:
