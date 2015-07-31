@@ -41,7 +41,7 @@ class TestMetricApiReader(TestCase):
         client = MetricsApiClient(
             auth_token="auth-token")
         self.assertEqual(client.api_url,
-                         "http://go.vumi.org/api/v1/go")
+                         "https://go.vumi.org/api/v1/go")
 
     def check_request(self, request, method, headers=None):
         self.assertEqual(request.method, method)
