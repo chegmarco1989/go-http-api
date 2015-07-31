@@ -74,3 +74,39 @@ class MetricsApiClient(object):
             "nulls": nulls
         }
         return self._api_request("GET", "metrics/", payload)
+
+    def fire(self, metrics):
+        """
+        Fire metrics.
+
+        :param dict metrics:
+            A mapping of metric names to floating point metric values.
+
+        When metrics are fired they must specify an aggregator. The
+        aggregation method is determined by the suffix of the metric name.
+        For example, ``foo.last`` fires a metric that uses the ``last``
+        aggregation method.
+
+        If a metric name does not end in a valid aggregator name, firing
+        the set of metrics will fail.
+
+        The available aggregators are:
+
+        :Average:
+            ``avg``. Aggregates by averaging the values in each time period.
+        :Sum:
+            ``sum``. Aggregates by summing all the values in each time period.
+        :Maximum:
+            ``max``. Aggregates by choosing the maximum value in each time
+            period.
+        :Minimum:
+            ``min``. Aggregates by choosing the minimum value in each time
+            period.
+        :Last:
+            ``last``. Aggregates by choosing the last value in each time
+            period.
+
+        Note that metrics can also be fired via an HTTP conversation API.
+        See :meth:`go_http.send.HttpApiSender.fire_metric`.
+        """
+        return self._api_request("POST", "metrics/", metrics)
