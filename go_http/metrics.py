@@ -75,7 +75,7 @@ class MetricsApiClient(object):
         }
         return self._api_request("GET", "metrics/", payload)
 
-    def fire(self, **metrics):
+    def fire(self, metrics):
         """
         Fire metrics.
 

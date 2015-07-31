@@ -89,7 +89,7 @@ class TestMetricApiClient(TestCase):
             "http://example.com/api/v1/go/"
             "metrics/", adapter)
 
-        result = self.client.fire(**{
+        result = self.client.fire({
             "foo.last": 3.1415,
         })
         self.assertEqual(result, response)
