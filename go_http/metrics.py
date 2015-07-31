@@ -82,7 +82,7 @@ class MetricsApiClient(object):
         :param dict metrics:
             A mapping of metric names to floating point metric values.
 
-        When metrics are fired they may specify an aggregator. The
+        When metrics are fired they must specify an aggregator. The
         aggregation method is determined by the suffix of the metric name.
         For example, ``foo.last`` fires a metric that uses the ``last``
         aggregation method.
