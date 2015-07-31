@@ -25,7 +25,7 @@ class ContactsApiClient(object):
 
     :param str api_url:
         The full URL of the HTTP API. Defaults to
-        ``http://go.vumi.org/api/v1/go``.
+        ``https://go.vumi.org/api/v1/go``.
 
     :type session:
         :class:`requests.Session`
@@ -36,7 +36,7 @@ class ContactsApiClient(object):
     def __init__(self, auth_token, api_url=None, session=None):
         self.auth_token = auth_token
         if api_url is None:
-            api_url = "http://go.vumi.org/api/v1/go"
+            api_url = "https://go.vumi.org/api/v1/go"
         self.api_url = api_url.rstrip('/')
         if session is None:
             session = requests.Session()

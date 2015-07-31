@@ -29,7 +29,7 @@ class HttpApiSender(object):
         conversation config.
     :param str api_url:
         The full URL of the HTTP API. Defaults to
-        ``http://go.vumi.org/api/v1/go/http_api_nostream``.
+        ``https://go.vumi.org/api/v1/go/http_api_nostream``.
     :type session:
         :class:`requests.Session`
     :param session:
@@ -43,7 +43,7 @@ class HttpApiSender(object):
         self.conversation_key = conversation_key
         self.conversation_token = conversation_token
         if api_url is None:
-            api_url = "http://go.vumi.org/api/v1/go/http_api_nostream"
+            api_url = "https://go.vumi.org/api/v1/go/http_api_nostream"
         self.api_url = api_url
         if session is None:
             session = requests.Session()

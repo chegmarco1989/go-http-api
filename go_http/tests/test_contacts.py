@@ -156,7 +156,7 @@ class TestContactsApiClient(TestCase):
     def test_default_api_url(self):
         contacts = ContactsApiClient(self.AUTH_TOKEN)
         self.assertEqual(
-            contacts.api_url, "http://go.vumi.org/api/v1/go")
+            contacts.api_url, "https://go.vumi.org/api/v1/go")
 
     def test_auth_failure(self):
         contacts = self.make_client(auth_token="bogus_token")
