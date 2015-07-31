@@ -3,6 +3,7 @@
 
 import json
 import logging
+import pprint
 import uuid
 
 import requests
@@ -28,7 +29,7 @@ class HttpApiSender(object):
         conversation config.
     :param str api_url:
         The full URL of the HTTP API. Defaults to
-        ``http://go.vumi.org/api/v1/go/http_api_nostream``.
+        ``https://go.vumi.org/api/v1/go/http_api_nostream``.
     :type session:
         :class:`requests.Session`
     :param session:
@@ -42,7 +43,7 @@ class HttpApiSender(object):
         self.conversation_key = conversation_key
         self.conversation_token = conversation_token
         if api_url is None:
-            api_url = "http://go.vumi.org/api/v1/go/http_api_nostream"
+            api_url = "https://go.vumi.org/api/v1/go/http_api_nostream"
         self.api_url = api_url
         if session is None:
             session = requests.Session()
@@ -146,6 +147,9 @@ class HttpApiSender(object):
         :param str agg:
             Aggregation type. Defaults to ``'last'``. Other allowed values are
             ``'sum'``, ``'avg'``, ``'max'`` and ``'min'``.
+
+        Note that metrics can also be fired via the metrics API.
+        See :meth:`go_http.metrics.MetricsApiClient.fire`.
         """
         data = [
             [
@@ -157,7 +161,7 @@ class HttpApiSender(object):
         return self._api_request('metrics.json', data)
 
 
-class LoggingSender(object):
+class LoggingSender(HttpApiSender):
     """
     A helper for pretending to sending text messages and fire metrics by
     instead logging them via Python's logging module.
@@ -172,36 +176,32 @@ class LoggingSender(object):
         self._logger = logging.getLogger(logger)
         self._level = level
 
-    def send_text(self, to_addr, content):
-        """ Send a message to an address.
+    def _api_request(self, suffix, py_data):
+        if suffix == "messages.json":
+            return self._handle_messages(py_data)
+        elif suffix == "metrics.json":
+            return self._handle_metrics(py_data)
+        else:
+            raise ValueError("XXX")
 
-        :param str to_addr:
-            Address to send to.
-        :param str content:
-            Text to send.
-        """
-        self._logger.log(
-            self._level, "Message: %r sent to %r" % (content, to_addr))
-        return {
-            "message_id": uuid.uuid4().hex,
-            "content": content,
-            "to_addr": to_addr,
-        }
+    def _handle_messages(self, data):
+        data["message_id"] = uuid.uuid4().hex
+        msg = "Message: %r sent to %r" % (data['content'], data['to_addr'])
+        if data.get("session_event"):
+            msg += " [session_event: %s]" % data["session_event"]
+        if data.get("helper_metadata"):
+            for key, value in sorted(data["helper_metadata"].items()):
+                msg += " [%s: %s]" % (key, pprint.pformat(value))
+        self._logger.log(self._level, msg)
+        return data
 
-    def fire_metric(self, metric, value, agg="last"):
-        """ Fire a value for a metric.
-
-        :param str metric:
-            Name of the metric to fire.
-        :param float value:
-            Value for the metric.
-        :param str agg:
-            Aggregation type. Defaults to ``'last'``. Other allowed values are
-            ``'sum'``, ``'avg'``, ``'max'`` and ``'min'``.
-        """
-        assert agg in ["last", "sum", "avg", "max", "min"]
-        self._logger.log(
-            self._level, "Metric: %r [%s] -> %g" % (metric, agg, float(value)))
+    def _handle_metrics(self, data):
+        for metric, value, agg in data:
+            assert agg in ["last", "sum", "avg", "max", "min"]
+            self._logger.log(
+                self._level, "Metric: %r [%s] -> %g" % (
+                    metric, agg, float(value),
+                ))
         return {
             "success": True,
             "reason": "Metrics published",
