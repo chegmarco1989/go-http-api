@@ -23,6 +23,7 @@ class RecordingAdapter(TestAdapter):
 
 
 class TestHttpApiSender(TestCase):
+
     def setUp(self):
         self.session = TestSession()
         self.sender = HttpApiSender(
@@ -92,7 +93,7 @@ class TestHttpApiSender(TestCase):
                 json.dumps({
                     "success": False,
                     "reason": "Recipient with msisdn to-addr-1 has opted out"}
-                    ),
+                ),
                 status=400))
         try:
             self.sender.send_text('to-addr-1', "foo")
@@ -113,7 +114,7 @@ class TestHttpApiSender(TestCase):
                 json.dumps({
                     "success": False,
                     "reason": "No unicorns were found"
-                    }),
+                }),
                 status=400))
         try:
             self.sender.send_text('to-addr-1', 'foo')
@@ -122,6 +123,23 @@ class TestHttpApiSender(TestCase):
             response = e.response.json()
             self.assertFalse(response['success'])
             self.assertEqual(response['reason'], "No unicorns were found")
+
+    def test_send_text_to_other_http_error_not_json(self):
+        """
+        HTTP errors that are not json encode should be raised without decoding
+        errors
+        """
+        self.session.mount(
+            "http://example.com/api/v1/go/http_api_nostream/conv-key/"
+            "messages.json", TestAdapter(
+                "401 Client Error: Unauthorized",
+                status=401))
+        try:
+            self.sender.send_text('to-addr-1', 'foo')
+        except HTTPError as e:
+            self.assertEqual(e.response.status_code, 401)
+            self.assertEqual(e.response.text,
+                             "401 Client Error: Unauthorized")
 
     def test_send_voice(self):
         self.check_successful_send(
@@ -208,6 +226,7 @@ class RecordingHandler(logging.Handler):
 
 
 class TestLoggingSender(TestCase):
+
     def setUp(self):
         self.sender = LoggingSender('go_http.test')
         self.handler = RecordingHandler()

@@ -62,9 +62,11 @@ class HttpApiSender(object):
         try:
             return self._api_request('messages.json', data)
         except HTTPError as e:
-            response = e.response.json()
-            if (
-                    e.response.status_code != 400 or
+            try:
+                response = e.response.json()
+            except ValueError:  # Some HTTP responses are not decodable
+                raise e
+            if (e.response.status_code != 400 or
                     'opted out' not in response.get('reason', '') or
                     response.get('success')):
                 raise e
