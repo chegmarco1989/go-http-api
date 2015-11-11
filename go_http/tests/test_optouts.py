@@ -80,6 +80,17 @@ class TestOptOutsApiClient(TestCase):
             adapter.request, 'GET',
             headers={"Authorization": u'Bearer auth-token'})
 
+    def test_non_json_error_response(self):
+        response = "Not JSON"
+        adapter = RecordingAdapter(json.dumps(response), status=503)
+        self.session.mount(
+            "http://example.com/api/v1/go/"
+            "optouts/msisdn/%2b1234", adapter)
+
+        self.assertRaises(
+            HTTPError,
+            self.client.get_optout, "msisdn", "+1234")
+
     def test_get_optout(self):
         opt_out = {
             u'created_at': u'2015-11-10 20:33:03.742409',
