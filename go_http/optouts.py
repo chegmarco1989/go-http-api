@@ -33,7 +33,7 @@ class OptOutsApiClient(object):
             session = requests.Session()
         self.session = session
 
-    def _api_request(self, method, path, data=None):
+    def _api_request(self, method, path, data=None, none_for_statuses=()):
         url = "%s/%s" % (self.api_url, urllib.quote(path))
         headers = {
             "Content-Type": "application/json; charset=utf-8",
@@ -45,6 +45,8 @@ class OptOutsApiClient(object):
             if data is not None:
                 data = json.dumps(data)
             r = self.session.request(method, url, data=data, headers=headers)
+        if r.status_code in none_for_statuses:
+            return None
         r.raise_for_status()
         return r.json()
 
@@ -58,7 +60,8 @@ class OptOutsApiClient(object):
             The address to retrieve an opt out for, e.g. `+271235678`.
 
         :return:
-            The opt out record (a dict).
+            The opt out record (a dict) or `None` if the API returned a 404
+            HTTP response.
 
         Example::
 
@@ -70,7 +73,9 @@ class OptOutsApiClient(object):
             }
         """
         uri = "optouts/%s/%s" % (address_type, address)
-        result = self._api_request("GET", uri)
+        result = self._api_request("GET", uri, none_for_statuses=(404,))
+        if result is None:
+            return None
         return result["opt_out"]
 
     def set_optout(self, address_type, address):
@@ -108,7 +113,8 @@ class OptOutsApiClient(object):
             The address to remove the opt out record for, e.g. `+271235678`.
 
         :return:
-            The deleted opt out record (a dict).
+            The deleted opt out record (a dict) or None if the API returned
+            an HTTP 404 reponse.
 
         Example::
 
@@ -120,7 +126,9 @@ class OptOutsApiClient(object):
             }
         """
         uri = "optouts/%s/%s" % (address_type, address)
-        result = self._api_request("DELETE", uri)
+        result = self._api_request("DELETE", uri, none_for_statuses=(404,))
+        if result is None:
+            return None
         return result["opt_out"]
 
     def count(self):

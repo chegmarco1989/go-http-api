@@ -64,11 +64,11 @@ class TestOptOutsApiClient(TestCase):
     def test_error_response(self):
         response = {
             u'status': {
-                u'reason': u'Opt out not found',
-                u'code': 404,
+                u'reason': u'Bad request',
+                u'code': 400,
             },
         }
-        adapter = RecordingAdapter(json.dumps(response), status=404)
+        adapter = RecordingAdapter(json.dumps(response), status=400)
         self.session.mount(
             "http://example.com/api/v1/go/"
             "optouts/msisdn/%2b1234", adapter)
@@ -109,6 +109,21 @@ class TestOptOutsApiClient(TestCase):
             adapter.request, 'GET',
             headers={"Authorization": u'Bearer auth-token'})
 
+    def test_get_optout_not_found(self):
+        response = {
+            u'status': {
+                u'reason': u'Opt out not found',
+                u'code': 404,
+            },
+        }
+        adapter = RecordingAdapter(json.dumps(response), status=404)
+        self.session.mount(
+            "http://example.com/api/v1/go/"
+            "optouts/msisdn/%2b1234", adapter)
+
+        result = self.client.get_optout("msisdn", "+1234")
+        self.assertEqual(result, None)
+
     def test_set_optout(self):
         opt_out = {
             u'created_at': u'2015-11-10 20:33:03.742409',
@@ -144,6 +159,21 @@ class TestOptOutsApiClient(TestCase):
         self.check_request(
             adapter.request, 'DELETE',
             headers={"Authorization": u'Bearer auth-token'})
+
+    def test_delete_optout_not_found(self):
+        response = {
+            u'status': {
+                u'reason': u'Opt out not found',
+                u'code': 404,
+            },
+        }
+        adapter = RecordingAdapter(json.dumps(response), status=404)
+        self.session.mount(
+            "http://example.com/api/v1/go/"
+            "optouts/msisdn/%2b1234", adapter)
+
+        result = self.client.delete_optout("msisdn", "+1234")
+        self.assertEqual(result, None)
 
     def test_count(self):
         response = self.response_ok({
