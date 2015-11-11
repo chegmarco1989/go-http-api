@@ -68,9 +68,8 @@ class TestMetricApiClient(TestCase):
         adapter = RecordingAdapter(json.dumps(response))
         self.session.mount(
             "http://example.com/api/v1/go/"
-            "metrics/?from=-30d&interval=1d"
-            "&m=stores.store_name.metric_name.agg"
-            "&nulls=omit", adapter)
+            "metrics/?m=stores.store_name.metric_name.agg"
+            "&interval=1d&from=-30d&nulls=omit", adapter)
 
         result = self.client.get_metric(
             "stores.store_name.metric_name.agg", "-30d", "1d", "omit")
