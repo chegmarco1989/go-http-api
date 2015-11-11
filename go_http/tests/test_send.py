@@ -13,7 +13,6 @@ from requests.exceptions import HTTPError
 
 
 class RecordingAdapter(TestAdapter):
-
     """ Record the request that was handled by the adapter.
     """
     request = None
@@ -217,7 +216,6 @@ class TestHttpApiSender(TestCase):
 
 
 class RecordingHandler(logging.Handler):
-
     """ Record logs. """
     logs = None
 
