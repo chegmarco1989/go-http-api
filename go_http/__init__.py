@@ -2,7 +2,7 @@
 
 from .send import HttpApiSender, LoggingSender
 
-__version__ = "0.3.0"
+__version__ = "0.3.1a0"
 
 __all__ = [
     'HttpApiSender', 'LoggingSender',
