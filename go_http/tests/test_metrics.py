@@ -1,8 +1,8 @@
 """
 Tests for go_http.metrics.
-
 """
 
+import urlparse
 import json
 from unittest import TestCase
 
@@ -43,8 +43,13 @@ class TestMetricApiClient(TestCase):
         self.assertEqual(client.api_url,
                          "https://go.vumi.org/api/v1/go")
 
-    def check_request(self, request, method, data=None, headers=None):
+    def check_request(
+            self, request, method, params=None, data=None, headers=None):
         self.assertEqual(request.method, method)
+        if params is not None:
+            url = urlparse.urlparse(request.url)
+            qs = urlparse.parse_qsl(url.query)
+            self.assertEqual(dict(qs), params)
         if headers is not None:
             for key, value in headers.items():
                 self.assertEqual(request.headers[key], value)
@@ -68,14 +73,17 @@ class TestMetricApiClient(TestCase):
         adapter = RecordingAdapter(json.dumps(response))
         self.session.mount(
             "http://example.com/api/v1/go/"
-            "metrics/?m=stores.store_name.metric_name.agg"
-            "&interval=1d&from=-30d&nulls=omit", adapter)
+            "metrics/", adapter)
 
         result = self.client.get_metric(
             "stores.store_name.metric_name.agg", "-30d", "1d", "omit")
         self.assertEqual(result, response)
         self.check_request(
             adapter.request, 'GET',
+            params={
+                "m": "stores.store_name.metric_name.agg",
+                "interval": "1d",
+                "from": "-30d", "nulls": "omit"},
             headers={"Authorization": u'Bearer auth-token'})
 
     def test_fire(self):
