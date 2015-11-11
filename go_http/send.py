@@ -64,16 +64,15 @@ class HttpApiSender(object):
         except HTTPError as e:
             try:
                 response = e.response.json()
-                if (
-                        e.response.status_code != 400 or
-                        'opted out' not in response.get('reason', '') or
-                        response.get('success')):
-                    raise e
-                raise UserOptedOutException(
-                    data.get("to_addr"), data.get("content"),
-                    response.get('reason'))
-            except ValueError:
+            except ValueError:  # Some HTTP responses are not decodable
                 raise e
+            if (e.response.status_code != 400 or
+                    'opted out' not in response.get('reason', '') or
+                    response.get('success')):
+                raise e
+            raise UserOptedOutException(
+                data.get("to_addr"), data.get("content"),
+                response.get('reason'))
 
     def send_text(self, to_addr, content, session_event=None):
         """ Send a text message to an address.
