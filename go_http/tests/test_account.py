@@ -62,7 +62,10 @@ class FakeAccountApi(object):
         }), 200, headers={})
 
     def add_success_response(self, method, params, result):
-        self.responses[method].append((params, copy.deepcopy(result)))
+        self.responses[method].append((params, copy.deepcopy(result), None))
+
+    def add_error_response(self, method, params, **error):
+        self.responses[method].append((params, None, error))
 
     def handle_request(self, request):
         if request.headers['Authorization'] != 'Bearer %s' % (
@@ -75,8 +78,10 @@ class FakeAccountApi(object):
             return self.jsonrpc_error_response(
                 "Fault", 8000, "Only POST method supported")
         data = json.loads(request.body)
-        params, result = self.responses[data['method']].pop()
+        params, result, error = self.responses[data['method']].pop()
         assert params == data['params']
+        if error is not None:
+            return self.jsonrpc_error_response(**error)
         return self.jsonrpc_success_response(result)
 
 
@@ -155,6 +160,20 @@ class TestAccountApiClient(TestCase):
     def test_auth_failure(self):
         client = self.make_client(auth_token="bogus_token")
         self.assert_http_error(403, client.campaigns)
+
+    def test_jsonrpc_error_handling(self):
+        client = self.make_client()
+        self.account_backend.add_error_response(
+            "campaigns", [],
+            fault="Fault", fault_code=8002, fault_string="Meep")
+        try:
+            client.campaigns()
+        except JsonRpcException as err:
+            self.assertEqual(err.fault, "Fault")
+            self.assertEqual(err.fault_code, 8002)
+            self.assertEqual(err.fault_string, "Meep")
+        else:
+            self.fail("Excepcted JsonRpcException exception to be raised")
 
     def test_campaigns(self):
         client = self.make_client()
