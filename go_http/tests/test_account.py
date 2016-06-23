@@ -201,3 +201,12 @@ class TestAccountApiClient(TestCase):
         self.assertEqual(
             client.routing_table("campaign-1"),
             fixtures.routing_table)
+
+    def test_update_routing_tabel(self):
+        client = self.make_client()
+        self.account_backend.add_success_response(
+            "update_routing_table", ["campaign-1", fixtures.routing_table],
+            None)
+        self.assertEqual(
+            client.update_routing_table("campaign-1", fixtures.routing_table),
+            None)
