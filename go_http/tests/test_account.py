@@ -7,7 +7,7 @@ import copy
 import json
 from unittest import TestCase
 
-from requests import HTTPError
+from requests import HTTPError, Session
 from requests.adapters import HTTPAdapter
 from requests_testadapter import TestSession, Resp, TestAdapter
 
@@ -148,9 +148,8 @@ class TestAccountApiClient(TestCase):
         self.assertRaises(ValueError, self.assert_http_error, 404, raise_error)
 
     def test_default_session(self):
-        import requests
         client = AccountApiClient(self.AUTH_TOKEN)
-        self.assertTrue(isinstance(client.session, requests.Session))
+        self.assertTrue(isinstance(client.session, Session))
 
     def test_default_api_url(self):
         client = AccountApiClient(self.AUTH_TOKEN)
