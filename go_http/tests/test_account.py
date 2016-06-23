@@ -119,8 +119,9 @@ class TestAccountApiClient(TestCase):
             f(*args, **kw)
         except Exception as err:
             self.assertTrue(isinstance(err, JsonRpcException))
-            self.assertTrue(isinstance(err.cursor, unicode))
-            self.assertTrue(isinstance(err.error, Exception))
+            self.assertTrue(isinstance(err.fault, unicode))
+            self.assertTrue(isinstance(err.fault_code, int))
+            self.assertTrue(isinstance(err.fault_string, unicode))
         return err
 
     def test_assert_http_error(self):
@@ -165,14 +166,10 @@ class TestAccountApiClient(TestCase):
         self.account_backend.add_error_response(
             "campaigns", [],
             fault="Fault", fault_code=8002, fault_string="Meep")
-        try:
-            client.campaigns()
-        except JsonRpcException as err:
-            self.assertEqual(err.fault, "Fault")
-            self.assertEqual(err.fault_code, 8002)
-            self.assertEqual(err.fault_string, "Meep")
-        else:
-            self.fail("Excepcted JsonRpcException exception to be raised")
+        err = self.assert_jsonrpc_exception(client.campaigns)
+        self.assertEqual(err.fault, "Fault")
+        self.assertEqual(err.fault_code, 8002)
+        self.assertEqual(err.fault_string, "Meep")
 
     def test_campaigns(self):
         client = self.make_client()
