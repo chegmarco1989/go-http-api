@@ -173,9 +173,9 @@ class ContactsApiClient(object):
         """
         Update a group.
 
-        :param str group_key
+        :param str group_key:
             Key for the group to update.
-        :param str update_data
+        :param str update_data:
             Fields to modify.
         """
         return self._api_request("PUT", "groups", group_key, update_data)
@@ -184,7 +184,7 @@ class ContactsApiClient(object):
         """
         Delete a group.
 
-        :param str group_key
+        :param str group_key:
             Key for the group to delete.
         """
         return self._api_request("DELETE", "groups", group_key)
@@ -195,7 +195,7 @@ class ContactsApiClient(object):
 
         This uses the API's paginated contact download.
 
-        :param str group_key
+        :param str group_key:
             Key for the group to query.
         :param start_cursor:
             An optional parameter that declares the cursor to start fetching
