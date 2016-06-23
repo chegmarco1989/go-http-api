@@ -86,7 +86,7 @@ class AccountApiClient(object):
         :param str campaign_id:
             The campaign or account id.
         """
-        return self._api_request("conversations", [campaign_id])
+        return self._api_request("channels", [campaign_id])
 
     def routers(self, campaign_id):
         """
