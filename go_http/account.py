@@ -57,7 +57,7 @@ class AccountApiClient(object):
         if rpc_error is not None:
             raise JsonRpcException(
                 fault=rpc_error['fault'], fault_code=rpc_error['faultCode'],
-                fault_string=rpc_error['fault_string'])
+                fault_string=rpc_error['faultString'])
         return rpc_response['result']
 
     def campaigns(self):
