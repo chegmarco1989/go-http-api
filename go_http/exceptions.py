@@ -35,3 +35,18 @@ class PagedException(Exception):
 
     def __str__(self):
         return repr(self)
+
+
+class JsonRpcException(Exception):
+    """
+    Exception raised if a JSON-RPC error is returned.
+
+    Attributes:
+        fault - The type of fault (e.g. 'Fault').
+        fault_code - The error code (e.g. 8002).
+        fault_string - A string describing the error.
+    """
+    def __init__(self, fault, fault_code, fault_string):
+        self.fault = fault
+        self.fault_code = fault_code
+        self.fault_string = fault_string
