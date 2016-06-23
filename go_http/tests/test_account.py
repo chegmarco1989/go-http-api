@@ -2,6 +2,8 @@
 Tests for go_http.account
 """
 
+import collections
+import copy
 import json
 from unittest import TestCase
 
@@ -11,6 +13,7 @@ from requests_testadapter import TestSession, Resp, TestAdapter
 
 from go_http.account import AccountApiClient
 from go_http.exceptions import JsonRpcException
+from go_http.tests.fixtures import account as fixtures
 
 
 class FakeAccountApiAdapter(HTTPAdapter):
@@ -39,6 +42,7 @@ class FakeAccountApi(object):
     def __init__(self, api_path, auth_token):
         self.api_path = api_path
         self.auth_token = auth_token
+        self.responses = collections.defaultdict(list)
 
     def http_error_response(self, http_code, error):
         return Resp("403 Forbidden", 403, headers={})
@@ -57,6 +61,9 @@ class FakeAccountApi(object):
             "result": result,
         }), 200, headers={})
 
+    def add_success_response(self, method, params, result):
+        self.responses[method].append((params, copy.deepcopy(result)))
+
     def handle_request(self, request):
         if request.headers['Authorization'] != 'Bearer %s' % (
                 self.auth_token):
@@ -67,8 +74,10 @@ class FakeAccountApi(object):
         if request.method != "POST":
             return self.jsonrpc_error_response(
                 "Fault", 8000, "Only POST method supported")
-        # TODO: handle requests properly
-        return self.jsonrpc_success_response({})
+        data = json.loads(request.body)
+        params, result = self.responses[data['method']].pop()
+        assert params == data['params']
+        return self.jsonrpc_success_response(result)
 
 
 class TestAccountApiClient(TestCase):
@@ -146,3 +155,49 @@ class TestAccountApiClient(TestCase):
     def test_auth_failure(self):
         client = self.make_client(auth_token="bogus_token")
         self.assert_http_error(403, client.campaigns)
+
+    def test_campaigns(self):
+        client = self.make_client()
+        self.account_backend.add_success_response(
+            "campaigns", [], fixtures.campaigns)
+        self.assertEqual(client.campaigns(), fixtures.campaigns)
+
+    def test_conversations(self):
+        client = self.make_client()
+        self.account_backend.add_success_response(
+            "conversations", ["campaign-1"], fixtures.conversations)
+        self.assertEqual(
+            client.conversations("campaign-1"),
+            fixtures.conversations)
+
+    def test_channels(self):
+        client = self.make_client()
+        self.account_backend.add_success_response(
+            "channels", ["campaign-1"], fixtures.channels)
+        self.assertEqual(
+            client.channels("campaign-1"),
+            fixtures.channels)
+
+    def test_routers(self):
+        client = self.make_client()
+        self.account_backend.add_success_response(
+            "routers", ["campaign-1"], fixtures.routers)
+        self.assertEqual(
+            client.routers("campaign-1"),
+            fixtures.routers)
+
+    def test_routing_entries(self):
+        client = self.make_client()
+        self.account_backend.add_success_response(
+            "routing_entries", ["campaign-1"], fixtures.routing_entries)
+        self.assertEqual(
+            client.routing_entries("campaign-1"),
+            fixtures.routing_entries)
+
+    def test_routing_table(self):
+        client = self.make_client()
+        self.account_backend.add_success_response(
+            "routing_table", ["campaign-1"], fixtures.routing_table)
+        self.assertEqual(
+            client.routing_table("campaign-1"),
+            fixtures.routing_table)
