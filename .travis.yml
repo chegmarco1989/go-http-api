@@ -13,3 +13,11 @@ script:
   - "py.test --cov=go_http go_http"
 after_success:
   - coveralls
+deploy:
+  provider: pypi
+  user: praekelt.org
+  password:
+    secure: wqUwUZk0s6VrZBoLe6lkl16nJjDD5RfH31YvKwoztxvB/k9yD4y9uigQtduVKKVz0SscZnlEOIAkJNavT29nrnsAdHYaG4Gs2okaXOJ0vbgvig6O1GoU/iDchjZiL2MZUxyntE57/s6RHOLjPmLgyA6uvNRbuVQdiNtdNb+gOdw=
+  distributions: sdist bdist_wheel
+  on:
+    tags: true
