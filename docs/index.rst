@@ -11,6 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   account-api
    contacts-api
    messaging-api
    metrics-api

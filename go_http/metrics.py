@@ -54,7 +54,7 @@ class MetricsApiClient(object):
         r.raise_for_status()
         return r.json()
 
-    def get_metric(self, metric, start, interval, nulls):
+    def get_metric(self, metric, start, interval, nulls, end=None):
         """
         Get a metric.
 
@@ -66,6 +66,8 @@ class MetricsApiClient(object):
             Bucket size for grouping (e.g. `1d`).
         :param str nulls:
             How nulls should be handled (e.g. `omit`).
+        :param str end:
+            When to get metrics until (e.g. `-30d`).
         """
         payload = {
             "m": metric,
@@ -73,6 +75,8 @@ class MetricsApiClient(object):
             "interval": interval,
             "nulls": nulls
         }
+        if end is not None:
+            payload['until'] = end
         return self._api_request("GET", "metrics/", payload)
 
     def fire(self, metrics):
